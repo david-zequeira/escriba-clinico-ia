@@ -1,0 +1,26 @@
+name: escriba_clinico
+description: App multiplataforma del escriba clínico de IA.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1      # gestión de estado
+  dio: ^5.7.0                   # cliente HTTP
+  record: ^5.1.2               # captura de audio multiplataforma
+  web_socket_channel: ^3.0.1    # streaming de audio en tiempo real
+  flutter_secure_storage: ^9.2.2 # solo tokens, nunca datos clínicos
+  go_router: ^14.2.7            # navegación
+  intl: ^0.19.0                 # i18n (es por defecto)
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
