@@ -1,4 +1,4 @@
-# Escriba Clínico IA
+# Health Care IA
 
 Agente de documentación clínica: escucha la consulta médico-paciente, genera un
 borrador de historia clínica y lo integra en el HIS del hospital. Diseñado para
