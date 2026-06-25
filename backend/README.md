@@ -54,7 +54,7 @@ Por defecto los providers son **mock** (sin claves API, respuesta simulada en se
 1. **POST `/consultations`** — Crear consulta.
    ```json
    {
-     "patient_id": "paciente-demo",
+     "patient_id": "12345678Z",
      "consultation_type": "admission_interview"
    }
    ```

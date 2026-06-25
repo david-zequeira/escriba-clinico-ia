@@ -23,7 +23,9 @@ class CreateConsultationRequest(BaseModel):
     doctor_id: str | None = Field(
         default=None, description="Opcional: por defecto el médico autenticado."
     )
-    patient_id: str = Field(description="Identificador (pseudonimizado) del paciente.")
+    patient_id: str = Field(
+        description="Número de identidad del paciente (DNI, NIE o identificador hospitalario).",
+    )
     consultation_type: ConsultationType = Field(
         default=ConsultationType.admission_interview,
         description="Tipo de documento clínico a generar.",
