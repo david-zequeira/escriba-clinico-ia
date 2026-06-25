@@ -11,7 +11,8 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^2.5.1      # gestión de estado
   dio: ^5.7.0                   # cliente HTTP
-  record: ^5.1.2               # captura de audio multiplataforma
+  record: ^5.2.1                # v6 exige record_macos (pub get falla si hay 403 en pub.dev)
+  path_provider: ^2.1.4
   web_socket_channel: ^3.0.1    # streaming de audio en tiempo real
   flutter_secure_storage: ^9.2.2 # solo tokens, nunca datos clínicos
   go_router: ^14.2.7            # navegación
@@ -24,3 +25,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+# record_linux 0.7.x no compila con record_platform_interface 1.6; 1.3.1 sí.
+dependency_overrides:
+  record_linux: 1.3.1
