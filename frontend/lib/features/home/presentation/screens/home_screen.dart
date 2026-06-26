@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
 import 'package:escriba_clinico/core/l10n_ext.dart';
+import 'package:escriba_clinico/core/locale_controller.dart';
 import 'package:escriba_clinico/core/theme_mode_controller.dart';
 import 'package:escriba_clinico/features/auth/state_management/auth_controller.dart';
 import 'package:escriba_clinico/features/home/presentation/widgets/brand_row.dart';
@@ -27,6 +28,7 @@ class HomeScreen extends ConsumerWidget {
               child: Text(doctorName, style: Theme.of(context).textTheme.bodySmall),
             ),
           ),
+        const _LanguageButton(),
         const _ThemeToggleButton(),
         IconButton(
           tooltip: context.l10n.logout,
@@ -125,6 +127,35 @@ class _Header extends StatelessWidget {
         title,
         const SizedBox(height: 8),
         Text(description, style: Theme.of(context).textTheme.bodyMedium),
+      ],
+    );
+  }
+}
+
+/// Selector de idioma (Español/Inglés), persistido en preferencias.
+class _LanguageButton extends ConsumerWidget {
+  const _LanguageButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(localeProvider)?.languageCode;
+    final current = selected ?? Localizations.localeOf(context).languageCode;
+    return PopupMenuButton<String>(
+      tooltip: context.l10n.language,
+      icon: const Icon(Icons.translate_rounded),
+      onSelected: (code) =>
+          ref.read(localeProvider.notifier).set(Locale(code)),
+      itemBuilder: (context) => [
+        CheckedPopupMenuItem(
+          value: 'es',
+          checked: current == 'es',
+          child: Text(context.l10n.spanish),
+        ),
+        CheckedPopupMenuItem(
+          value: 'en',
+          checked: current == 'en',
+          child: Text(context.l10n.english),
+        ),
       ],
     );
   }

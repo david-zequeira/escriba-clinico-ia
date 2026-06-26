@@ -10,6 +10,9 @@
   "devCredentialsHint": "Entorno de desarrollo: cualquier credencial válida.",
 
   "toggleTheme": "Cambiar tema",
+  "language": "Idioma",
+  "spanish": "Español",
+  "english": "English",
   "logout": "Cerrar sesión",
   "newDocument": "Nuevo documento",
   "newDocumentSubtitle": "Elige el tipo de nota clínica a generar a partir del audio.",

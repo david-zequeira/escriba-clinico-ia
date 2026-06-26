@@ -10,6 +10,9 @@
   "devCredentialsHint": "Development environment: any credentials work.",
 
   "toggleTheme": "Toggle theme",
+  "language": "Language",
+  "spanish": "Español",
+  "english": "English",
   "logout": "Log out",
   "newDocument": "New document",
   "newDocumentSubtitle": "Choose the type of clinical note to generate from the audio.",

@@ -146,6 +146,24 @@ abstract class AppLocalizations {
   /// **'Toggle theme'**
   String get toggleTheme;
 
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @spanish.
+  ///
+  /// In en, this message translates to:
+  /// **'Español'**
+  String get spanish;
+
+  /// No description provided for @english.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get english;
+
   /// No description provided for @logout.
   ///
   /// In en, this message translates to:
