@@ -33,6 +33,9 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# FVM: se versiona el pin (.fvmrc), no el SDK descargado.
+.fvm/
+
 # Symbolication related
 app.*.symbols
 
