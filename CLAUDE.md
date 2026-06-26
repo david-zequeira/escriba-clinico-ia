@@ -177,3 +177,35 @@ Las integraciones externas (Speechmatics, Mistral) están como **stubs** con
 resultados simulados para que el flujo funcione de extremo a extremo. Tareas reales
 pendientes: implementar el SDK de STT, el de LLM con salida estructurada JSON, el
 conector FHIR con el HIS del hospital piloto, y la autenticación OIDC.
+
+---
+
+## 10. Pruebas y pre-push (NO NEGOCIABLE)
+
+**Siempre se ejecutan las pruebas antes de `git push`** — tanto personas como
+asistentes de IA. Esto está garantizado por un hook de Git versionado.
+
+### Frontend (Flutter)
+- Las pruebas viven en `frontend/test/` **espejando `lib/`**: una carpeta por feature
+  (`test/features/<feature>/{domain,data,state_management}/...`).
+- Convención: cada feature tiene pruebas de su **dominio** (entidades), su **repositorio**
+  (con datasource/fake, sin red) y su **controller** (con repo falso vía `ProviderContainer`
+  + `overrideWithValue`). No se mockea con red real ni dispositivos.
+- Comandos: `flutter analyze` y `flutter test` (desde `frontend/`).
+
+### Hook pre-push (el "lugar indicado")
+- Script versionado: [`.githooks/pre-push`](./.githooks/pre-push). Corre `flutter analyze`
+  + `flutter test`; si algo falla, **aborta el push**.
+- Activación una sola vez por clon:
+  ```bash
+  git config core.hooksPath .githooks
+  ```
+- Resuelve Flutter desde PATH, `fvm` o `~/fvm/versions/*` automáticamente.
+
+### Regla para asistentes de IA
+Antes de proponer o ejecutar `git push`, ejecuta las pruebas y confirma que están en
+verde. Si añades una feature nueva, **añade su carpeta de pruebas** siguiendo la
+convención de arriba (dominio + repo + controller).
+
+> Backend: mantiene su propia suite `pytest` (ver `backend/README.md`). Puede añadirse al
+> hook o a CI cuando el equipo lo decida.

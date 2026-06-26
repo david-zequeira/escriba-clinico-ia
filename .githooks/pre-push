@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#
+# Hook pre-push: ejecuta SIEMPRE las pruebas del frontend antes de permitir el push.
+# Si analyze o los tests fallan, el push se aborta. Aplica tanto a personas como
+# a asistentes de IA (Claude Code), porque se dispara en `git push`.
+#
+# Activación (una vez por clon):  git config core.hooksPath .githooks
+#
+set -euo pipefail
+
+echo "▶ pre-push: verificando el frontend antes de subir…"
+
+# --- Resolver el binario de Flutter (PATH → fvm → ~/fvm/versions/*) ---
+resolve_flutter() {
+  if command -v flutter >/dev/null 2>&1; then echo "flutter"; return; fi
+  if command -v fvm >/dev/null 2>&1 && [ -f .fvmrc ]; then echo "fvm flutter"; return; fi
+  local latest
+  latest=$(ls -d "$HOME"/fvm/versions/*/bin/flutter 2>/dev/null | sort -V | tail -1 || true)
+  [ -n "$latest" ] && echo "$latest" || echo ""
+}
+
+FLUTTER=$(resolve_flutter)
+if [ -z "$FLUTTER" ]; then
+  echo "✖ No se encontró Flutter (ni en PATH ni en fvm). Instálalo o añádelo al PATH."
+  exit 1
+fi
+
+ROOT=$(git rev-parse --show-toplevel)
+cd "$ROOT/frontend"
+
+echo "▶ flutter analyze…"
+$FLUTTER analyze || { echo "✖ 'flutter analyze' encontró problemas — push abortado."; exit 1; }
+
+echo "▶ flutter test…"
+$FLUTTER test || { echo "✖ Las pruebas fallaron — push abortado."; exit 1; }
+
+echo "✓ Frontend verde (analyze + tests). Continúa el push."
