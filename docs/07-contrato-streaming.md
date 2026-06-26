@@ -6,8 +6,11 @@ espera del backend para la **Fase F2 — Captura en vivo** (ver
 **front-first con contrato**: el frontend ya está implementado contra una **fuente
 *fake*** y este documento es lo que falta para conectar el backend real (Gio).
 
-> Estado backend: **pendiente**. Hoy `STTProvider` solo expone `transcribe()` (batch).
-> F2 necesita además un `transcribe_stream()` y un endpoint WebSocket.
+> Estado backend: **esqueleto implementado con mock**. El endpoint WebSocket existe
+> (`app/api/routes/streaming.py`) sobre un puerto `RealtimeSTTProvider` y un
+> `MockRealtimeSTTProvider` que emite una conversación simulada. Falta el proveedor
+> real de streaming (Gladia Real-Time / Speechmatics RT) y, en el front, cambiar la
+> fuente *fake* por `WebSocketTranscriptionSource`.
 
 ---
 
@@ -88,4 +91,6 @@ Modelo de *utterance* único: en cada momento hay como mucho **un** segmento
 - El frontend muestra los `partial` de forma **tenue** para que el médico distinga lo
   provisional de lo consolidado. Sigue siendo trazabilidad, **no** decisión clínica.
 
-> Estado: v0.1 — contrato inicial para el Slice 1 de F2 (streaming + waveform).
+> Estado: v0.2 — contrato + esqueleto backend (endpoint WS + puerto
+> `RealtimeSTTProvider` + mock). Pendiente: proveedor real (Gladia Real-Time) y
+> cablear el front a `WebSocketTranscriptionSource`.

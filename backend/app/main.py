@@ -8,7 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from app.api.routes import consultations, health
+from app.api.routes import consultations, health, streaming
 from app.core.config import settings
 from app.core.database import init_db
 from app.domain.exceptions import ConsultationNotFound, DomainError
@@ -47,6 +47,7 @@ if settings.ENV in ("dev", "staging"):
 
 app.include_router(health.router)
 app.include_router(consultations.router)
+app.include_router(streaming.router)
 
 
 if settings.DOCS_ENABLED:

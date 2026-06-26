@@ -31,7 +31,9 @@ class Settings(BaseSettings):
     DELETE_AUDIO_AFTER_TRANSCRIPTION: bool = True
 
     # --- STT (voz a texto) ---
-    STT_PROVIDER: str = "mock"  # mock | gladia | speechmatics
+    STT_PROVIDER: str = "mock"  # mock | gladia | speechmatics  (batch, subida de audio)
+    # STT en vivo (F2, WebSocket). Hoy solo 'mock'; gladia/speechmatics realtime pendientes.
+    STT_REALTIME_PROVIDER: str = "mock"  # mock | gladia | speechmatics
     STT_API_KEY: str = ""
     STT_LANGUAGE: str = "es"
     GLADIA_MODEL: str = "solaria-3"  # solaria-3 (EU, es/fr/en/de/it) | solaria-1

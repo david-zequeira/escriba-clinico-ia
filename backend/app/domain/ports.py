@@ -6,12 +6,14 @@ NUNCA de proveedores concretos. Así STT, LLM, BD o cola son intercambiables.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from uuid import UUID
 
 from app.domain.entities import Consultation
 from app.domain.enums import ConsultationType
 from app.domain.clinical_documents import ClinicalDraft
 from app.domain.enums import ConsultationType
+from app.domain.streaming import TranscriptionEvent
 from app.domain.value_objects import Transcript
 
 
@@ -40,6 +42,54 @@ class STTProvider(ABC):
         language: str = "es",
         consultation_type: ConsultationType = ConsultationType.admission_interview,
     ) -> Transcript: ...
+
+
+class RealtimeTranscriptionSession(ABC):
+    """Sesión de transcripción en vivo (F2): se le empuja audio y emite eventos.
+
+    El audio fluye en tránsito y se descarta; no se persiste (minimización §7).
+    Se cierra con `close()` (idempotente) al terminar la consulta o desconectar.
+    """
+
+    @abstractmethod
+    def events(self) -> AsyncIterator[TranscriptionEvent]:
+        """Stream de eventos (partial/final/error/closed) hacia el cliente."""
+        ...
+
+    @abstractmethod
+    async def push_audio(self, chunk: bytes) -> None:
+        """Entrega un chunk de audio (PCM 16-bit, 16 kHz, mono) al motor STT."""
+        ...
+
+    @abstractmethod
+    async def pause(self) -> None: ...
+
+    @abstractmethod
+    async def resume(self) -> None: ...
+
+    @abstractmethod
+    async def close(self) -> None: ...
+
+
+class RealtimeSTTProvider(ABC):
+    """Motor de voz a texto en streaming. Intercambiable (mock | gladia | speechmatics).
+
+    Separado de `STTProvider` (batch) a propósito: no todo proveedor batch sabe
+    hacer streaming, y así no obligamos a implementarlo a los que solo transcriben
+    audio completo.
+    """
+
+    name: str = "base"
+
+    @abstractmethod
+    async def open(
+        self,
+        *,
+        language: str = "es",
+        consultation_type: ConsultationType = ConsultationType.admission_interview,
+    ) -> RealtimeTranscriptionSession:
+        """Abre una sesión de transcripción en vivo lista para recibir audio."""
+        ...
 
 
 class LLMProvider(ABC):
