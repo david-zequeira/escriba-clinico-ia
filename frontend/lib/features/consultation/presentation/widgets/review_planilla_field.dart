@@ -12,12 +12,24 @@ class PlanillaField extends StatefulWidget {
     required this.definition,
     required this.section,
     required this.onChanged,
+    this.hasEvidence = false,
+    this.isSelected = false,
+    this.onShowEvidence,
   });
 
   final int index;
   final DocumentSectionDef definition;
   final ClinicalSection section;
   final ValueChanged<String> onChanged;
+
+  /// Hay evidencia (segmentos de la conversación) que respalda este campo.
+  final bool hasEvidence;
+
+  /// El campo está seleccionado: su evidencia se resalta en la conversación.
+  final bool isSelected;
+
+  /// Solicita resaltar la evidencia de este campo en el panel de conversación.
+  final VoidCallback? onShowEvidence;
 
   @override
   State<PlanillaField> createState() => _PlanillaFieldState();
@@ -61,8 +73,8 @@ class _PlanillaFieldState extends State<PlanillaField> {
           color: t.backgroundElevated,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: status.borderColor,
-            width: status.highlighted ? 1.5 : 1,
+            color: widget.isSelected ? t.primary : status.borderColor,
+            width: widget.isSelected ? 2 : (status.highlighted ? 1.5 : 1),
           ),
         ),
         child: Column(
@@ -114,6 +126,13 @@ class _PlanillaFieldState extends State<PlanillaField> {
                   ),
                   const SizedBox(width: 8),
                   _StatusChip(status: status),
+                  if (widget.hasEvidence) ...[
+                    const SizedBox(width: 2),
+                    _EvidenceButton(
+                      selected: widget.isSelected,
+                      onTap: widget.onShowEvidence,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -211,6 +230,31 @@ class _FieldStatus {
         chipColor: t.warning,
         highlighted: true,
       );
+}
+
+/// Botón compacto "ver evidencia": resalta en la conversación el origen del campo.
+class _EvidenceButton extends StatelessWidget {
+  const _EvidenceButton({required this.selected, this.onTap});
+
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final color = selected ? t.primary : t.textTertiary;
+    return Tooltip(
+      message: 'Ver de dónde salió',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(VionixRadii.sm),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(Icons.travel_explore_rounded, size: 18, color: color),
+        ),
+      ),
+    );
+  }
 }
 
 class _StatusChip extends StatelessWidget {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:escriba_clinico/features/consultation/data/datasources/consultation_remote_datasource.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/clinical_draft.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/consultation.dart';
+import 'package:escriba_clinico/features/consultation/domain/entities/transcript.dart';
 import 'package:escriba_clinico/features/consultation/domain/repositories/consultation_repository.dart';
 import 'package:escriba_clinico/models/consultation_type.dart';
 
@@ -51,13 +52,24 @@ class ConsultationRepositoryImpl implements ConsultationRepository {
   @override
   Future<Consultation> getConsultation(String consultationId) async {
     final data = await _remote.fetchConsultation(consultationId);
+    final draft = _draftFromJson(data['clinical_draft'] as Map<String, dynamic>);
+
+    // Evidencia (trazabilidad Clase I): si el backend la provee, se usa; si no
+    // —caso actual— se genera un mock determinista para construir/demostrar la UI.
+    final transcript = _transcriptFromJson(data['transcript']);
+    final evidence = _evidenceFromJson(data['evidence']);
+    final hasReal = transcript.isNotEmpty && evidence.isNotEmpty;
+    final mock = hasReal ? null : _mockEvidence(draft);
+
     return Consultation(
       id: data['id'] as String,
       consultationType:
           ConsultationType.fromApi(data['consultation_type'] as String),
       documentTitle: data['document_title'] as String,
       sectionLabels: Map<String, String>.from(data['section_labels'] as Map),
-      draft: _draftFromJson(data['clinical_draft'] as Map<String, dynamic>),
+      draft: draft,
+      transcript: hasReal ? transcript : mock!.transcript,
+      evidenceBySection: hasReal ? evidence : mock!.evidence,
     );
   }
 
@@ -82,6 +94,62 @@ class ConsultationRepositoryImpl implements ConsultationRepository {
         generatedByAi: j['generated_by_ai'] as bool? ?? true,
       ),
     );
+  }
+
+  Transcript _transcriptFromJson(dynamic raw) {
+    if (raw is! List) return const Transcript();
+    return Transcript(
+      segments: raw.whereType<Map>().map((m) {
+        final mm = Map<String, dynamic>.from(m);
+        return TranscriptSegment(
+          speaker: Speaker.fromApi(mm['speaker'] as String?),
+          text: mm['text'] as String? ?? '',
+          startMs: mm['start_ms'] as int?,
+          endMs: mm['end_ms'] as int?,
+        );
+      }).toList(),
+    );
+  }
+
+  Map<String, List<int>> _evidenceFromJson(dynamic raw) {
+    if (raw is! Map) return const {};
+    final out = <String, List<int>>{};
+    raw.forEach((k, v) {
+      if (v is List) {
+        out['$k'] = v.whereType<num>().map((n) => n.toInt()).toList();
+      }
+    });
+    return out;
+  }
+
+  /// MOCK temporal (contrato F1): construye una conversación sintética a partir
+  /// del borrador y enlaza cada sección con su segmento. Se elimina en cuanto el
+  /// backend devuelva `transcript` + `evidence` reales.
+  ({Transcript transcript, Map<String, List<int>> evidence}) _mockEvidence(
+    ClinicalDraft draft,
+  ) {
+    final segments = <TranscriptSegment>[
+      const TranscriptSegment(
+        speaker: Speaker.medico,
+        text: 'Buenos días, cuénteme qué le ocurre.',
+      ),
+    ];
+    final evidence = <String, List<int>>{};
+    var medicoTurn = false;
+    for (final entry in draft.orderedSections) {
+      final content = entry.value.content.trim();
+      if (content.isEmpty) continue;
+      final idx = segments.length;
+      segments.add(
+        TranscriptSegment(
+          speaker: medicoTurn ? Speaker.medico : Speaker.paciente,
+          text: content,
+        ),
+      );
+      evidence[entry.key] = [idx];
+      medicoTurn = !medicoTurn;
+    }
+    return (transcript: Transcript(segments: segments), evidence: evidence);
   }
 }
 
