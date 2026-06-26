@@ -82,5 +82,12 @@ void main() {
     await tester.tap(evidenceButtons.first);
     await tester.pumpAndSettle();
     expect(find.text('Conversación'), findsOneWidget);
+
+    // Bidireccional: tocar un fragmento de la conversación selecciona su campo
+    // sin romper la pantalla.
+    await tester.tap(find.text('Dolor en el pecho.'));
+    await tester.pumpAndSettle();
+    expect(find.text('Conversación'), findsOneWidget);
+    expect(find.text('Dolor en el pecho.'), findsOneWidget);
   });
 }

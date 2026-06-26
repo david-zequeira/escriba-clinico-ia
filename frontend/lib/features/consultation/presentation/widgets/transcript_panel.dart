@@ -1,19 +1,68 @@
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
 import 'package:escriba_clinico/features/consultation/domain/entities/transcript.dart';
 
 /// Panel de la conversación. Resalta los segmentos que respaldan el campo
-/// seleccionado (evidence grounding / trazabilidad Clase I).
-class TranscriptPanel extends StatelessWidget {
+/// seleccionado y, al tocar un segmento, pide seleccionar el campo que respalda
+/// (evidence grounding bidireccional / trazabilidad Clase I).
+class TranscriptPanel extends StatefulWidget {
   const TranscriptPanel({
     super.key,
     required this.transcript,
     this.highlighted = const {},
+    this.onSegmentTap,
   });
 
   final Transcript transcript;
   final Set<int> highlighted;
+  final ValueChanged<int>? onSegmentTap;
+
+  @override
+  State<TranscriptPanel> createState() => _TranscriptPanelState();
+}
+
+class _TranscriptPanelState extends State<TranscriptPanel> {
+  List<GlobalKey> _keys = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _rebuildKeys();
+  }
+
+  void _rebuildKeys() {
+    _keys = List.generate(widget.transcript.segments.length, (_) => GlobalKey());
+  }
+
+  @override
+  void didUpdateWidget(TranscriptPanel old) {
+    super.didUpdateWidget(old);
+    if (old.transcript.segments.length != widget.transcript.segments.length) {
+      _rebuildKeys();
+    }
+    if (widget.highlighted.isNotEmpty &&
+        !setEquals(old.highlighted, widget.highlighted)) {
+      _scrollToFirstHighlighted();
+    }
+  }
+
+  void _scrollToFirstHighlighted() {
+    final first = widget.highlighted.reduce((a, b) => a < b ? a : b);
+    if (first < 0 || first >= _keys.length) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _keys[first].currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          alignment: 0.1,
+          duration: VionixMotion.medium,
+          curve: VionixMotion.standard,
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,20 +81,26 @@ class TranscriptPanel extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            highlighted.isEmpty
-                ? 'Toca «ver evidencia» en un campo para resaltar de dónde salió.'
+            widget.highlighted.isEmpty
+                ? 'Toca «ver evidencia» en un campo, o un fragmento aquí, para enlazarlos.'
                 : 'Resaltado: el origen del campo seleccionado.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
-          if (transcript.isEmpty)
+          if (widget.transcript.isEmpty)
             Text('Sin transcripción disponible.',
                 style: Theme.of(context).textTheme.bodyMedium)
           else
-            for (var i = 0; i < transcript.segments.length; i++)
-              _SegmentTile(
-                segment: transcript.segments[i],
-                highlighted: highlighted.contains(i),
+            for (var i = 0; i < widget.transcript.segments.length; i++)
+              KeyedSubtree(
+                key: _keys[i],
+                child: _SegmentTile(
+                  segment: widget.transcript.segments[i],
+                  highlighted: widget.highlighted.contains(i),
+                  onTap: widget.onSegmentTap == null
+                      ? null
+                      : () => widget.onSegmentTap!(i),
+                ),
               ),
         ],
       ),
@@ -54,10 +109,15 @@ class TranscriptPanel extends StatelessWidget {
 }
 
 class _SegmentTile extends StatelessWidget {
-  const _SegmentTile({required this.segment, required this.highlighted});
+  const _SegmentTile({
+    required this.segment,
+    required this.highlighted,
+    this.onTap,
+  });
 
   final TranscriptSegment segment;
   final bool highlighted;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -69,43 +129,58 @@ class _SegmentTile extends StatelessWidget {
       Speaker.desconocido => t.textTertiary,
     };
 
-    return AnimatedContainer(
-      duration: VionixMotion.medium,
-      curve: VionixMotion.standard,
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: highlighted ? speakerColor.withValues(alpha: 0.10) : t.surfaceMuted,
-        borderRadius: BorderRadius.circular(VionixRadii.md),
-        border: Border.all(
-          color: highlighted ? speakerColor.withValues(alpha: 0.6) : t.borderSubtle,
-          width: highlighted ? 1.5 : 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                isDoctor ? Icons.medical_services_outlined : Icons.person_outline,
-                size: 14,
-                color: speakerColor,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(VionixRadii.md),
+          child: AnimatedContainer(
+            duration: VionixMotion.medium,
+            curve: VionixMotion.standard,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: highlighted
+                  ? speakerColor.withValues(alpha: 0.10)
+                  : t.surfaceMuted,
+              borderRadius: BorderRadius.circular(VionixRadii.md),
+              border: Border.all(
+                color: highlighted
+                    ? speakerColor.withValues(alpha: 0.6)
+                    : t.borderSubtle,
+                width: highlighted ? 1.5 : 1,
               ),
-              const SizedBox(width: 6),
-              Text(
-                segment.speaker.label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: speakerColor,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      isDoctor
+                          ? Icons.medical_services_outlined
+                          : Icons.person_outline,
+                      size: 14,
+                      color: speakerColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      segment.speaker.label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: speakerColor,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(segment.text, style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(segment.text, style: Theme.of(context).textTheme.bodyMedium),
-        ],
+        ),
       ),
     );
   }

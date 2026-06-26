@@ -21,6 +21,35 @@ class ReviewScreen extends ConsumerStatefulWidget {
 
 class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   String? _selectedKey;
+  final Map<String, GlobalKey> _fieldKeys = {};
+
+  GlobalKey _fieldKey(String key) => _fieldKeys.putIfAbsent(key, GlobalKey.new);
+
+  /// Toca un fragmento de la conversación → selecciona el campo que respalda
+  /// y desplaza la planilla hasta él (evidence grounding bidireccional).
+  void _onSegmentTap(int index) {
+    final evidence = ref.read(consultationProvider).evidenceBySection;
+    String? key;
+    for (final entry in evidence.entries) {
+      if (entry.value.contains(index)) {
+        key = entry.key;
+        break;
+      }
+    }
+    if (key == null) return;
+    setState(() => _selectedKey = key);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _fieldKeys[key]?.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          alignment: 0.1,
+          duration: VionixMotion.medium,
+          curve: VionixMotion.standard,
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +89,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     final transcript = TranscriptPanel(
       transcript: state.transcript,
       highlighted: highlighted,
+      onSegmentTap: _onSegmentTap,
     );
 
     final wide = isWideLayout(context);
@@ -126,22 +156,26 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
         final def = entry.value;
         final section = note.sections[def.key] ?? ClinicalSection();
         final hasEvidence = (evidenceBySection[def.key] ?? const []).isNotEmpty;
-        return FadeSlideIn(
-          delay: VionixMotion.stagger * (index + 1),
-          child: PlanillaField(
-            index: index + 1,
-            definition: def,
-            section: section,
-            hasEvidence: hasEvidence,
-            isSelected: _selectedKey == def.key,
-            onShowEvidence: hasEvidence
-                ? () => setState(() {
-                      _selectedKey = _selectedKey == def.key ? null : def.key;
-                    })
-                : null,
-            onChanged: (value) => ref
-                .read(consultationProvider.notifier)
-                .updateSectionContent(def.key, value),
+        return KeyedSubtree(
+          key: _fieldKey(def.key),
+          child: FadeSlideIn(
+            delay: VionixMotion.stagger * (index + 1),
+            child: PlanillaField(
+              index: index + 1,
+              definition: def,
+              section: section,
+              hasEvidence: hasEvidence,
+              isSelected: _selectedKey == def.key,
+              onShowEvidence: hasEvidence
+                  ? () => setState(() {
+                        _selectedKey =
+                            _selectedKey == def.key ? null : def.key;
+                      })
+                  : null,
+              onChanged: (value) => ref
+                  .read(consultationProvider.notifier)
+                  .updateSectionContent(def.key, value),
+            ),
           ),
         );
       }),
