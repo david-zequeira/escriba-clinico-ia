@@ -90,4 +90,46 @@ void main() {
     expect(find.text('Conversación'), findsOneWidget);
     expect(find.text('Dolor en el pecho.'), findsOneWidget);
   });
+
+  testWidgets('en pantalla estrecha, «ver evidencia» abre un bottom sheet',
+      (tester) async {
+    // Tamaño tipo móvil → layout compacto.
+    tester.view.physicalSize = const Size(420, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final seeded = ConsultationState(
+      stage: ConsultationStage.review,
+      consultationType: ConsultationType.admissionInterview,
+      documentTitle: 'Historia clínica de ingreso',
+      note: ClinicalDraft(
+        documentType: ConsultationType.admissionInterview,
+        sections: {'motivo_ingreso': ClinicalSection(content: 'dolor torácico')},
+      ),
+      transcript: const Transcript(segments: [
+        TranscriptSegment(speaker: Speaker.medico, text: '¿Qué le ocurre?'),
+        TranscriptSegment(speaker: Speaker.paciente, text: 'Dolor en el pecho.'),
+      ]),
+      evidenceBySection: const {
+        'motivo_ingreso': [1],
+      },
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          consultationProvider.overrideWith((ref) => _SeededController(seeded)),
+        ],
+        child: const MaterialApp(home: ReviewScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Ver de dónde salió').first);
+    await tester.pumpAndSettle();
+
+    // El sheet muestra la evidencia del campo.
+    expect(find.textContaining('Evidencia ·'), findsOneWidget);
+  });
 }

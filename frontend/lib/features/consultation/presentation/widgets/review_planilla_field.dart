@@ -13,6 +13,7 @@ class PlanillaField extends StatefulWidget {
     required this.section,
     required this.onChanged,
     this.hasEvidence = false,
+    this.evidenceCount = 0,
     this.isSelected = false,
     this.onShowEvidence,
   });
@@ -24,6 +25,9 @@ class PlanillaField extends StatefulWidget {
 
   /// Hay evidencia (segmentos de la conversación) que respalda este campo.
   final bool hasEvidence;
+
+  /// Número de fragmentos de la conversación que respaldan este campo.
+  final int evidenceCount;
 
   /// El campo está seleccionado: su evidencia se resalta en la conversación.
   final bool isSelected;
@@ -130,6 +134,7 @@ class _PlanillaFieldState extends State<PlanillaField> {
                     const SizedBox(width: 2),
                     _EvidenceButton(
                       selected: widget.isSelected,
+                      count: widget.evidenceCount,
                       onTap: widget.onShowEvidence,
                     ),
                   ],
@@ -234,9 +239,10 @@ class _FieldStatus {
 
 /// Botón compacto "ver evidencia": resalta en la conversación el origen del campo.
 class _EvidenceButton extends StatelessWidget {
-  const _EvidenceButton({required this.selected, this.onTap});
+  const _EvidenceButton({required this.selected, this.count = 0, this.onTap});
 
   final bool selected;
+  final int count;
   final VoidCallback? onTap;
 
   @override
@@ -244,13 +250,29 @@ class _EvidenceButton extends StatelessWidget {
     final t = context.tokens;
     final color = selected ? t.primary : t.textTertiary;
     return Tooltip(
-      message: 'Ver de dónde salió',
+      message: count > 1 ? 'Ver de dónde salió ($count fragmentos)' : 'Ver de dónde salió',
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(VionixRadii.sm),
         child: Padding(
           padding: const EdgeInsets.all(6),
-          child: Icon(Icons.travel_explore_rounded, size: 18, color: color),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.travel_explore_rounded, size: 18, color: color),
+              if (count > 1) ...[
+                const SizedBox(width: 3),
+                Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

@@ -135,19 +135,18 @@ class ConsultationRepositoryImpl implements ConsultationRepository {
       ),
     ];
     final evidence = <String, List<int>>{};
-    var medicoTurn = false;
     for (final entry in draft.orderedSections) {
       final content = entry.value.content.trim();
       if (content.isEmpty) continue;
-      final idx = segments.length;
-      segments.add(
-        TranscriptSegment(
-          speaker: medicoTurn ? Speaker.medico : Speaker.paciente,
-          text: content,
-        ),
-      );
-      evidence[entry.key] = [idx];
-      medicoTurn = !medicoTurn;
+      // Cada sección cita 2 fragmentos: la pregunta del médico y la respuesta.
+      final questionIdx = segments.length;
+      segments.add(const TranscriptSegment(
+        speaker: Speaker.medico,
+        text: 'De acuerdo. ¿Puede darme más detalles?',
+      ));
+      final answerIdx = segments.length;
+      segments.add(TranscriptSegment(speaker: Speaker.paciente, text: content));
+      evidence[entry.key] = [questionIdx, answerIdx];
     }
     return (transcript: Transcript(segments: segments), evidence: evidence);
   }

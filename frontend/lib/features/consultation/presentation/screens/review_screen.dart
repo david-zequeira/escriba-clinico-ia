@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
 import 'package:escriba_clinico/features/consultation/domain/entities/clinical_draft.dart';
+import 'package:escriba_clinico/features/consultation/domain/entities/transcript.dart';
 import 'package:escriba_clinico/features/consultation/presentation/widgets/review_ai_banner.dart';
 import 'package:escriba_clinico/features/consultation/presentation/widgets/review_planilla_field.dart';
 import 'package:escriba_clinico/features/consultation/presentation/widgets/review_planilla_header.dart';
@@ -24,6 +25,47 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   final Map<String, GlobalKey> _fieldKeys = {};
 
   GlobalKey _fieldKey(String key) => _fieldKeys.putIfAbsent(key, GlobalKey.new);
+
+  /// Muestra la evidencia de un campo. En pantallas anchas resalta en el panel
+  /// lateral (toggle); en estrechas abre un bottom sheet con los fragmentos.
+  void _showEvidence(String key, String label) {
+    if (isWideLayout(context)) {
+      setState(() => _selectedKey = _selectedKey == key ? null : key);
+      return;
+    }
+    setState(() => _selectedKey = key);
+    final state = ref.read(consultationProvider);
+    final indices = state.evidenceBySection[key] ?? const <int>[];
+    final segments = state.transcript.segments;
+    final cited = [
+      for (final i in indices)
+        if (i >= 0 && i < segments.length) segments[i],
+    ];
+    if (cited.isEmpty) return;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: context.tokens.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(VionixRadii.xl)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          0,
+          16,
+          MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
+        child: SingleChildScrollView(
+          child: TranscriptPanel(
+            transcript: Transcript(segments: cited),
+            highlighted: {for (var i = 0; i < cited.length; i++) i},
+            title: 'Evidencia · $label',
+          ),
+        ),
+      ),
+    );
+  }
 
   /// Toca un fragmento de la conversación → selecciona el campo que respalda
   /// y desplaza la planilla hasta él (evidence grounding bidireccional).
@@ -165,13 +207,10 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               definition: def,
               section: section,
               hasEvidence: hasEvidence,
+              evidenceCount: (evidenceBySection[def.key] ?? const []).length,
               isSelected: _selectedKey == def.key,
-              onShowEvidence: hasEvidence
-                  ? () => setState(() {
-                        _selectedKey =
-                            _selectedKey == def.key ? null : def.key;
-                      })
-                  : null,
+              onShowEvidence:
+                  hasEvidence ? () => _showEvidence(def.key, def.label) : null,
               onChanged: (value) => ref
                   .read(consultationProvider.notifier)
                   .updateSectionContent(def.key, value),

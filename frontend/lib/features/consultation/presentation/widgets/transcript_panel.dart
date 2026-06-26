@@ -13,11 +13,13 @@ class TranscriptPanel extends StatefulWidget {
     required this.transcript,
     this.highlighted = const {},
     this.onSegmentTap,
+    this.title = 'Conversación',
   });
 
   final Transcript transcript;
   final Set<int> highlighted;
   final ValueChanged<int>? onSegmentTap;
+  final String title;
 
   @override
   State<TranscriptPanel> createState() => _TranscriptPanelState();
@@ -76,7 +78,10 @@ class _TranscriptPanelState extends State<TranscriptPanel> {
             children: [
               Icon(Icons.forum_outlined, size: 18, color: t.textSecondary),
               const SizedBox(width: 8),
-              Text('Conversación', style: Theme.of(context).textTheme.titleMedium),
+              Expanded(
+                child: Text(widget.title,
+                    style: Theme.of(context).textTheme.titleMedium),
+              ),
             ],
           ),
           const SizedBox(height: 4),
