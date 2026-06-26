@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
-import 'package:escriba_clinico/core/patient_identity_labels.dart';
+import 'package:escriba_clinico/core/l10n_ext.dart';
 import 'package:escriba_clinico/models/consultation_type.dart';
 
 /// Panel de control de la grabación: identidad del paciente, botón de grabar,
@@ -30,6 +30,7 @@ class RecordingControlsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final acc = context.tokens.accentFor(type.apiValue);
     return GlassSurface(
       child: Column(
@@ -37,21 +38,21 @@ class RecordingControlsPanel extends StatelessWidget {
         children: [
           InfoPill(
             icon: type.icon,
-            label: type.shortLabel,
+            label: type.shortLabel(l),
             color: acc.accent,
             background: acc.soft,
           ),
           const SizedBox(height: 20),
-          Text(type.recordingHint, style: Theme.of(context).textTheme.bodyLarge),
+          Text(type.recordingHint(l), style: Theme.of(context).textTheme.bodyLarge),
           const SizedBox(height: 24),
           TextField(
             controller: patientIdController,
             focusNode: patientIdFocus,
             enabled: !recording && !finalizing && !serverProcessing,
-            decoration: const InputDecoration(
-              labelText: PatientIdentityLabels.fieldLabel,
-              hintText: PatientIdentityLabels.hint,
-              prefixIcon: Icon(Icons.badge_outlined, size: 20),
+            decoration: InputDecoration(
+              labelText: l.patientIdLabel,
+              hintText: l.patientIdHint,
+              prefixIcon: const Icon(Icons.badge_outlined, size: 20),
             ),
             textCapitalization: TextCapitalization.characters,
             textInputAction: TextInputAction.done,
@@ -85,13 +86,13 @@ class RecordingControlsPanel extends StatelessWidget {
                       foregroundColor: Colors.white,
                     ),
                     icon: const Icon(Icons.stop_rounded),
-                    label: Text(finalizing ? 'Finalizando…' : 'Detener grabación'),
+                    label: Text(finalizing ? l.finishing : l.stopRecording),
                   ),
                 if (!recording && !_busy)
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 250),
                     child: Text(
-                      serverProcessing ? 'Enviando al servidor…' : 'Pulsa para grabar',
+                      serverProcessing ? l.sendingToServer : l.pressToRecord,
                       key: ValueKey(serverProcessing ? 'upload' : 'idle'),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
@@ -101,7 +102,7 @@ class RecordingControlsPanel extends StatelessWidget {
                   )
                 else if (recording)
                   Text(
-                    'Grabando… pulsa detener o usa Espacio',
+                    l.recordingInProgress,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: context.tokens.error,
@@ -113,7 +114,7 @@ class RecordingControlsPanel extends StatelessWidget {
           if (isDesktopPlatform) ...[
             const SizedBox(height: 20),
             Text(
-              'Atajo: Espacio (si el foco no está en un campo)',
+              l.spaceShortcutHint,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
-import 'package:escriba_clinico/core/patient_identity_labels.dart';
+import 'package:escriba_clinico/core/l10n_ext.dart';
 
 /// Cabecera de la planilla de revisión: título, paciente y progreso de campos.
 class PlanillaHeader extends StatelessWidget {
@@ -40,7 +40,7 @@ class PlanillaHeader extends StatelessWidget {
           if (patientId != null && patientId!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
-              '${PatientIdentityLabels.fieldLabel}: $patientId',
+              '${context.l10n.patientIdLabel}: $patientId',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: t.textSecondary,
                   ),
@@ -48,8 +48,7 @@ class PlanillaHeader extends StatelessWidget {
           ],
           const SizedBox(height: 12),
           Text(
-            '$filledCount de $totalCount campos completados por la IA. '
-            'Completa los vacíos y revisa el resto antes de confirmar.',
+            context.l10n.fieldsFilledSummary(filledCount, totalCount),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: t.textSecondary,
                 ),

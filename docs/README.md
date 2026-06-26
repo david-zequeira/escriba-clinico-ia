@@ -11,6 +11,7 @@
 | [03-brechas-y-roadmap.md](./03-brechas-y-roadmap.md) | Gap analysis detallado y roadmap por fases |
 | [04-arquitectura.md](./04-arquitectura.md) | Arquitectura técnica, capas y contratos entre componentes |
 | [05-cumplimiento.md](./05-cumplimiento.md) | Requisitos regulatorios (RGPD, MDR, IA Act) aplicables al MVP |
+| [06-roadmap-frontend.md](./06-roadmap-frontend.md) | Próximas fases del producto con enfoque de ejecución frontend y diferenciadores |
 
 ## Resumen ejecutivo
 

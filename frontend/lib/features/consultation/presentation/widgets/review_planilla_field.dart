@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
+import 'package:escriba_clinico/core/l10n_ext.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/clinical_draft.dart';
+import 'package:escriba_clinico/l10n/app_localizations.dart';
 import 'package:escriba_clinico/models/document_templates.dart';
 
 /// Campo editable de una sección de la planilla, con estado (IA / Vacío / Revisar).
@@ -12,12 +14,28 @@ class PlanillaField extends StatefulWidget {
     required this.definition,
     required this.section,
     required this.onChanged,
+    this.hasEvidence = false,
+    this.evidenceCount = 0,
+    this.isSelected = false,
+    this.onShowEvidence,
   });
 
   final int index;
   final DocumentSectionDef definition;
   final ClinicalSection section;
   final ValueChanged<String> onChanged;
+
+  /// Hay evidencia (segmentos de la conversación) que respalda este campo.
+  final bool hasEvidence;
+
+  /// Número de fragmentos de la conversación que respaldan este campo.
+  final int evidenceCount;
+
+  /// El campo está seleccionado: su evidencia se resalta en la conversación.
+  final bool isSelected;
+
+  /// Solicita resaltar la evidencia de este campo en el panel de conversación.
+  final VoidCallback? onShowEvidence;
 
   @override
   State<PlanillaField> createState() => _PlanillaFieldState();
@@ -52,7 +70,7 @@ class _PlanillaFieldState extends State<PlanillaField> {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final status = _fieldStatus(t);
+    final status = _fieldStatus(t, context.l10n);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -61,8 +79,8 @@ class _PlanillaFieldState extends State<PlanillaField> {
           color: t.backgroundElevated,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: status.borderColor,
-            width: status.highlighted ? 1.5 : 1,
+            color: widget.isSelected ? t.primary : status.borderColor,
+            width: widget.isSelected ? 2 : (status.highlighted ? 1.5 : 1),
           ),
         ),
         child: Column(
@@ -96,7 +114,7 @@ class _PlanillaFieldState extends State<PlanillaField> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.definition.label,
+                          widget.definition.label(context.l10n),
                           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: t.textPrimary,
@@ -104,7 +122,7 @@ class _PlanillaFieldState extends State<PlanillaField> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          widget.definition.hint,
+                          widget.definition.hint(context.l10n),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: t.textSecondary,
                               ),
@@ -114,6 +132,14 @@ class _PlanillaFieldState extends State<PlanillaField> {
                   ),
                   const SizedBox(width: 8),
                   _StatusChip(status: status),
+                  if (widget.hasEvidence) ...[
+                    const SizedBox(width: 2),
+                    _EvidenceButton(
+                      selected: widget.isSelected,
+                      count: widget.evidenceCount,
+                      onTap: widget.onShowEvidence,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -124,7 +150,7 @@ class _PlanillaFieldState extends State<PlanillaField> {
                 minLines: 3,
                 maxLines: null,
                 decoration: InputDecoration(
-                  hintText: _isFilled ? null : 'Pendiente — completa manualmente…',
+                  hintText: _isFilled ? null : context.l10n.pendingFieldHint,
                   filled: true,
                   fillColor: status.fieldBackground,
                 ),
@@ -137,14 +163,14 @@ class _PlanillaFieldState extends State<PlanillaField> {
     );
   }
 
-  _FieldStatus _fieldStatus(VionixTokens t) {
+  _FieldStatus _fieldStatus(VionixTokens t, AppLocalizations l) {
     if (widget.section.needsConfirmation && _isFilled) {
-      return _FieldStatus.review(t);
+      return _FieldStatus.review(t, l);
     }
     if (_isFilled) {
-      return _FieldStatus.filledByAi(t);
+      return _FieldStatus.filledByAi(t, l);
     }
-    return _FieldStatus.empty(t);
+    return _FieldStatus.empty(t, l);
   }
 }
 
@@ -174,9 +200,9 @@ class _FieldStatus {
   final bool highlighted;
 
   /// Campo rellenado por la IA (acento primario).
-  static _FieldStatus filledByAi(VionixTokens t) => _FieldStatus(
+  static _FieldStatus filledByAi(VionixTokens t, AppLocalizations l) => _FieldStatus(
         kind: _FieldStatusKind.filledByAi,
-        label: 'IA',
+        label: l.fieldStatusAi,
         borderColor: t.primary,
         numberBackground: t.primarySoft,
         numberColor: t.primary,
@@ -188,9 +214,9 @@ class _FieldStatus {
       );
 
   /// Campo vacío, pendiente de completar.
-  static _FieldStatus empty(VionixTokens t) => _FieldStatus(
+  static _FieldStatus empty(VionixTokens t, AppLocalizations l) => _FieldStatus(
         kind: _FieldStatusKind.empty,
-        label: 'Vacío',
+        label: l.fieldStatusEmpty,
         borderColor: t.border,
         numberBackground: t.surfaceMuted,
         numberColor: t.textTertiary,
@@ -200,9 +226,9 @@ class _FieldStatus {
       );
 
   /// Campo que requiere confirmación explícita del médico (acento de aviso).
-  static _FieldStatus review(VionixTokens t) => _FieldStatus(
+  static _FieldStatus review(VionixTokens t, AppLocalizations l) => _FieldStatus(
         kind: _FieldStatusKind.review,
-        label: 'Revisar',
+        label: l.fieldStatusReview,
         borderColor: t.warning,
         numberBackground: t.warningSoft,
         numberColor: t.warning,
@@ -211,6 +237,48 @@ class _FieldStatus {
         chipColor: t.warning,
         highlighted: true,
       );
+}
+
+/// Botón compacto "ver evidencia": resalta en la conversación el origen del campo.
+class _EvidenceButton extends StatelessWidget {
+  const _EvidenceButton({required this.selected, this.count = 0, this.onTap});
+
+  final bool selected;
+  final int count;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final color = selected ? t.primary : t.textTertiary;
+    return Tooltip(
+      message: count > 1 ? context.l10n.showEvidenceCount(count) : context.l10n.showEvidence,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(VionixRadii.sm),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.travel_explore_rounded, size: 18, color: color),
+              if (count > 1) ...[
+                const SizedBox(width: 3),
+                Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _StatusChip extends StatelessWidget {

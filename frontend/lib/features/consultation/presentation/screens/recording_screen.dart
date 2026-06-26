@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:escriba_clinico/core/config.dart';
-import 'package:escriba_clinico/core/patient_identity_labels.dart';
+import 'package:escriba_clinico/core/l10n_ext.dart';
 import 'package:escriba_clinico/features/audio/data/repositories/audio_repository_impl.dart';
 import 'package:escriba_clinico/features/consultation/presentation/screens/review_screen.dart';
 import 'package:escriba_clinico/features/consultation/presentation/widgets/recording_controls_panel.dart';
@@ -62,6 +62,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
     if (widget.consultationType != ConsultationType.admissionInterview) {
       return true;
     }
+    final l = context.l10n;
     final accepted = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -74,14 +75,11 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
           ),
           child: Icon(Icons.privacy_tip_outlined, color: context.tokens.warning),
         ),
-        title: const Text('Consentimiento del paciente'),
-        content: const Text(
-          'Confirma que el paciente ha sido informado y consiente la grabación '
-          'de la consulta para generar un borrador clínico con asistencia de IA.',
-        ),
+        title: Text(l.consentTitle),
+        content: Text(l.consentBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Confirmar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l.confirm)),
         ],
       ),
     );
@@ -90,6 +88,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
 
   Future<void> _toggleRecording() async {
     final state = ref.read(consultationProvider);
+    final l = context.l10n;
     if (_finalizing || state.stage == ConsultationStage.processing) return;
 
     if (_recording) {
@@ -101,12 +100,12 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
       try {
         final tempPath = _tempPath;
         if (tempPath == null) {
-          throw StateError('Ruta de audio no disponible.');
+          throw StateError(l.audioPathUnavailable);
         }
 
         final audio = await _audio.stop(tempPath: tempPath);
         if (audio.bytes.isEmpty) {
-          throw StateError('La grabación está vacía. Comprueba el micrófono.');
+          throw StateError(l.emptyRecording);
         }
 
         if (!mounted) return;
@@ -140,7 +139,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
     final patientId = _patientIdController.text.trim();
     if (patientId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(PatientIdentityLabels.requiredMessage)),
+        SnackBar(content: Text(l.patientIdRequired)),
       );
       _patientIdFocus.requestFocus();
       return;
@@ -189,6 +188,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
     final stage = ref.watch(consultationProvider.select((s) => s.stage));
     final error = ref.watch(consultationProvider
         .select((s) => s.stage == ConsultationStage.error ? s.errorMessage : null));
+    final l = context.l10n;
     final type = widget.consultationType;
     final wide = isWideLayout(context);
     final serverProcessing = stage == ConsultationStage.processing;
@@ -214,7 +214,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
               icon: const Icon(Icons.arrow_back_rounded),
               onPressed: serverProcessing ? null : () => Navigator.of(context).pop(),
             ),
-            title: type.title,
+            title: type.title(l),
             body: SingleChildScrollView(
               child: FadeSlideIn(
                 child: Column(
@@ -231,8 +231,8 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
                               color: context.tokens.error.withValues(alpha: 0.3)),
                         ),
                         child: Text(
-                          'Backend no disponible en ${AppConfig.apiBaseUrl}\n'
-                          'Arranca: cd backend && source .venv/bin/activate && python -m app',
+                          '${l.backendUnavailable(AppConfig.apiBaseUrl)}\n'
+                          '${l.backendStartHint}',
                           style: TextStyle(color: context.tokens.error, fontSize: 13),
                         ),
                       )
@@ -240,7 +240,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Text(
-                          'Conectado a ${AppConfig.apiBaseUrl}',
+                          l.connectedTo(AppConfig.apiBaseUrl),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: context.tokens.success,
                               ),

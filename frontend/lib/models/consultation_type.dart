@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:escriba_clinico/l10n/app_localizations.dart';
+
 /// Tipos de documento clínico (espejo del backend).
+/// Los textos visibles se resuelven vía i18n (`AppLocalizations`).
 enum ConsultationType {
   admissionInterview('admission_interview'),
   treatmentOrders('treatment_orders'),
@@ -9,34 +12,28 @@ enum ConsultationType {
   const ConsultationType(this.apiValue);
   final String apiValue;
 
-  String get title => switch (this) {
-        ConsultationType.admissionInterview => 'Historia clínica de ingreso',
-        ConsultationType.treatmentOrders => 'Indicaciones de tratamiento',
-        ConsultationType.evolution => 'Nota de evolución',
+  String title(AppLocalizations l) => switch (this) {
+        ConsultationType.admissionInterview => l.admissionTitle,
+        ConsultationType.treatmentOrders => l.treatmentTitle,
+        ConsultationType.evolution => l.evolutionTitle,
       };
 
-  String get subtitle => switch (this) {
-        ConsultationType.admissionInterview =>
-          'Entrevista médico-paciente para valoración de ingreso.',
-        ConsultationType.treatmentOrders =>
-          'Dictado del médico con indicaciones para paciente ingresado.',
-        ConsultationType.evolution =>
-          'Evolución clínica de paciente ya ingresado.',
+  String subtitle(AppLocalizations l) => switch (this) {
+        ConsultationType.admissionInterview => l.admissionSubtitle,
+        ConsultationType.treatmentOrders => l.treatmentSubtitle,
+        ConsultationType.evolution => l.evolutionSubtitle,
       };
 
-  String get recordingHint => switch (this) {
-        ConsultationType.admissionInterview =>
-          'Graba la conversación con el paciente (consentimiento previo).',
-        ConsultationType.treatmentOrders =>
-          'Graba tus indicaciones en voz alta (sin paciente).',
-        ConsultationType.evolution =>
-          'Graba la evolución del paciente ingresado.',
+  String recordingHint(AppLocalizations l) => switch (this) {
+        ConsultationType.admissionInterview => l.admissionRecordingHint,
+        ConsultationType.treatmentOrders => l.treatmentRecordingHint,
+        ConsultationType.evolution => l.evolutionRecordingHint,
       };
 
-  String get shortLabel => switch (this) {
-        ConsultationType.admissionInterview => 'Ingreso',
-        ConsultationType.treatmentOrders => 'Indicaciones',
-        ConsultationType.evolution => 'Evolución',
+  String shortLabel(AppLocalizations l) => switch (this) {
+        ConsultationType.admissionInterview => l.admissionShort,
+        ConsultationType.treatmentOrders => l.treatmentShort,
+        ConsultationType.evolution => l.evolutionShort,
       };
 
   IconData get icon => switch (this) {

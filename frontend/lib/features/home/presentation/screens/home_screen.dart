@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
+import 'package:escriba_clinico/core/l10n_ext.dart';
+import 'package:escriba_clinico/core/locale_controller.dart';
 import 'package:escriba_clinico/core/theme_mode_controller.dart';
 import 'package:escriba_clinico/features/auth/state_management/auth_controller.dart';
 import 'package:escriba_clinico/features/home/presentation/widgets/brand_row.dart';
@@ -26,9 +28,10 @@ class HomeScreen extends ConsumerWidget {
               child: Text(doctorName, style: Theme.of(context).textTheme.bodySmall),
             ),
           ),
+        const _LanguageButton(),
         const _ThemeToggleButton(),
         IconButton(
-          tooltip: 'Cerrar sesión',
+          tooltip: context.l10n.logout,
           icon: const Icon(Icons.logout_rounded),
           onPressed: () => ref.read(authProvider.notifier).logout(),
         ),
@@ -90,10 +93,9 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const description =
-        'Elige el tipo de nota clínica a generar a partir del audio.';
-    final title =
-        Text('Nuevo documento', style: Theme.of(context).textTheme.headlineMedium);
+    final description = context.l10n.newDocumentSubtitle;
+    final title = Text(context.l10n.newDocument,
+        style: Theme.of(context).textTheme.headlineMedium);
 
     if (compact) {
       return Row(
@@ -130,6 +132,35 @@ class _Header extends StatelessWidget {
   }
 }
 
+/// Selector de idioma (Español/Inglés), persistido en preferencias.
+class _LanguageButton extends ConsumerWidget {
+  const _LanguageButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(localeProvider)?.languageCode;
+    final current = selected ?? Localizations.localeOf(context).languageCode;
+    return PopupMenuButton<String>(
+      tooltip: context.l10n.language,
+      icon: const Icon(Icons.translate_rounded),
+      onSelected: (code) =>
+          ref.read(localeProvider.notifier).set(Locale(code)),
+      itemBuilder: (context) => [
+        CheckedPopupMenuItem(
+          value: 'es',
+          checked: current == 'es',
+          child: Text(context.l10n.spanish),
+        ),
+        CheckedPopupMenuItem(
+          value: 'en',
+          checked: current == 'en',
+          child: Text(context.l10n.english),
+        ),
+      ],
+    );
+  }
+}
+
 /// Botón de cambio de tema, aislado en su propio Consumer para que alternar el
 /// tema no reconstruya toda la pantalla.
 class _ThemeToggleButton extends ConsumerWidget {
@@ -139,7 +170,7 @@ class _ThemeToggleButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     return IconButton(
-      tooltip: 'Cambiar tema',
+      tooltip: context.l10n.toggleTheme,
       icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
       onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
     );

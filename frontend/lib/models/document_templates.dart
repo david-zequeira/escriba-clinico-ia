@@ -1,6 +1,11 @@
+import 'package:escriba_clinico/l10n/app_localizations.dart';
 import 'package:escriba_clinico/models/consultation_type.dart';
 
+/// Texto traducible de una sección (etiqueta o pista) resuelto vía i18n.
+typedef SectionText = String Function(AppLocalizations l);
+
 /// Definición de un campo de la planilla clínica (espejo del backend).
+/// `label`/`hint` son funciones de [AppLocalizations] para soportar i18n.
 class DocumentSectionDef {
   const DocumentSectionDef({
     required this.key,
@@ -9,103 +14,103 @@ class DocumentSectionDef {
   });
 
   final String key;
-  final String label;
-  final String hint;
+  final SectionText label;
+  final SectionText hint;
 }
 
 /// Plantillas ordenadas por tipo de documento (LOINC / estándar hospitalario UE).
 abstract final class DocumentTemplates {
-  static const admission = [
+  static final admission = <DocumentSectionDef>[
     DocumentSectionDef(
       key: 'motivo_ingreso',
-      label: 'Motivo de ingreso',
-      hint: 'Motivo principal que origina el ingreso hospitalario.',
+      label: (l) => l.admMotivoLabel,
+      hint: (l) => l.admMotivoHint,
     ),
     DocumentSectionDef(
       key: 'enfermedad_actual',
-      label: 'Enfermedad actual',
-      hint: 'Cronología y características del cuadro actual.',
+      label: (l) => l.admEnfermedadLabel,
+      hint: (l) => l.admEnfermedadHint,
     ),
     DocumentSectionDef(
       key: 'antecedentes',
-      label: 'Antecedentes',
-      hint: 'Personales, familiares, alergias y medicación habitual.',
+      label: (l) => l.admAntecedentesLabel,
+      hint: (l) => l.admAntecedentesHint,
     ),
     DocumentSectionDef(
       key: 'exploracion_fisica',
-      label: 'Exploración física',
-      hint: 'Hallazgos objetivos de la exploración.',
+      label: (l) => l.admExploracionLabel,
+      hint: (l) => l.admExploracionHint,
     ),
     DocumentSectionDef(
       key: 'pruebas_complementarias',
-      label: 'Pruebas complementarias',
-      hint: 'Analítica, imagen u otras pruebas relevantes.',
+      label: (l) => l.admPruebasLabel,
+      hint: (l) => l.admPruebasHint,
     ),
     DocumentSectionDef(
       key: 'juicio_clinico',
-      label: 'Juicio clínico (borrador)',
-      hint: 'Impresión diagnóstica preliminar. Requiere validación del médico.',
+      label: (l) => l.admJuicioLabel,
+      hint: (l) => l.admJuicioHint,
     ),
     DocumentSectionDef(
       key: 'plan',
-      label: 'Plan de ingreso y actuación',
-      hint: 'Conducta terapéutica, estudios pendientes y criterios de ingreso.',
+      label: (l) => l.admPlanLabel,
+      hint: (l) => l.admPlanHint,
     ),
   ];
 
-  static const treatmentOrders = [
+  static final treatmentOrders = <DocumentSectionDef>[
     DocumentSectionDef(
       key: 'contexto',
-      label: 'Contexto del paciente',
-      hint: 'Situación clínica actual del paciente ingresado.',
+      label: (l) => l.trtContextoLabel,
+      hint: (l) => l.trtContextoHint,
     ),
     DocumentSectionDef(
       key: 'indicaciones_farmacologicas',
-      label: 'Indicaciones farmacológicas',
-      hint: 'Fármacos, dosis, vía y frecuencia.',
+      label: (l) => l.trtFarmaLabel,
+      hint: (l) => l.trtFarmaHint,
     ),
     DocumentSectionDef(
       key: 'indicaciones_no_farmacologicas',
-      label: 'Indicaciones no farmacológicas y cuidados',
-      hint: 'Dieta, movilización, curas y otras medidas.',
+      label: (l) => l.trtNoFarmaLabel,
+      hint: (l) => l.trtNoFarmaHint,
     ),
     DocumentSectionDef(
       key: 'vigilancia',
-      label: 'Vigilancia y constantes',
-      hint: 'Controles, monitorización y alertas.',
+      label: (l) => l.trtVigilanciaLabel,
+      hint: (l) => l.trtVigilanciaHint,
     ),
     DocumentSectionDef(
       key: 'observaciones',
-      label: 'Observaciones y prioridad',
-      hint: 'Notas adicionales o prioridad de actuación.',
+      label: (l) => l.trtObservacionesLabel,
+      hint: (l) => l.trtObservacionesHint,
     ),
   ];
 
-  static const evolution = [
+  static final evolution = <DocumentSectionDef>[
     DocumentSectionDef(
       key: 'subjetivo',
-      label: 'Subjetivo',
-      hint: 'Síntomas referidos por el paciente.',
+      label: (l) => l.evoSubjetivoLabel,
+      hint: (l) => l.evoSubjetivoHint,
     ),
     DocumentSectionDef(
       key: 'objetivo',
-      label: 'Objetivo y exploración',
-      hint: 'Constantes, exploración y datos objetivos.',
+      label: (l) => l.evoObjetivoLabel,
+      hint: (l) => l.evoObjetivoHint,
     ),
     DocumentSectionDef(
       key: 'evolucion',
-      label: 'Evolución clínica',
-      hint: 'Curso del cuadro desde el último registro.',
+      label: (l) => l.evoEvolucionLabel,
+      hint: (l) => l.evoEvolucionHint,
     ),
     DocumentSectionDef(
       key: 'juicio_clinico',
-      label: 'Juicio clínico (borrador)',
-      hint: 'Impresión diagnóstica actual. Requiere validación del médico.',
+      label: (l) => l.evoJuicioLabel,
+      hint: (l) => l.evoJuicioHint,
     ),
     DocumentSectionDef(
       key: 'plan',
-      label: 'Plan terapéutico y próximos pasos',
-      hint: 'Cambios de tratamiento y seguimiento.',
+      label: (l) => l.evoPlanLabel,
+      hint: (l) => l.evoPlanHint,
     ),
   ];
 

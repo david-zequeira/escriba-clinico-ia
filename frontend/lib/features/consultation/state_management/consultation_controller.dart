@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:escriba_clinico/features/consultation/data/repositories/consultation_repository_impl.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/clinical_draft.dart';
+import 'package:escriba_clinico/features/consultation/domain/entities/transcript.dart';
 import 'package:escriba_clinico/features/consultation/domain/repositories/consultation_repository.dart';
 import 'package:escriba_clinico/models/consultation_type.dart';
 
@@ -14,6 +15,8 @@ class ConsultationState {
     this.documentTitle,
     this.sectionLabels = const {},
     this.note,
+    this.transcript = const Transcript(),
+    this.evidenceBySection = const {},
     this.consultationId,
     this.patientId,
     this.errorMessage,
@@ -24,6 +27,8 @@ class ConsultationState {
   final String? documentTitle;
   final Map<String, String> sectionLabels;
   final ClinicalDraft? note;
+  final Transcript transcript;
+  final Map<String, List<int>> evidenceBySection;
   final String? consultationId;
   final String? patientId;
   final String? errorMessage;
@@ -34,6 +39,8 @@ class ConsultationState {
     String? documentTitle,
     Map<String, String>? sectionLabels,
     ClinicalDraft? note,
+    Transcript? transcript,
+    Map<String, List<int>>? evidenceBySection,
     String? consultationId,
     String? patientId,
     String? errorMessage,
@@ -44,6 +51,8 @@ class ConsultationState {
         documentTitle: documentTitle ?? this.documentTitle,
         sectionLabels: sectionLabels ?? this.sectionLabels,
         note: note ?? this.note,
+        transcript: transcript ?? this.transcript,
+        evidenceBySection: evidenceBySection ?? this.evidenceBySection,
         consultationId: consultationId ?? this.consultationId,
         patientId: patientId ?? this.patientId,
         errorMessage: errorMessage,
@@ -82,6 +91,8 @@ class ConsultationController extends StateNotifier<ConsultationState> {
         documentTitle: result.documentTitle,
         sectionLabels: result.sectionLabels,
         note: result.draft,
+        transcript: result.transcript,
+        evidenceBySection: result.evidenceBySection,
       );
     } catch (e) {
       state = state.copyWith(

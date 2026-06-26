@@ -32,7 +32,10 @@ abstract final class AppTheme {
     );
 
     return base.copyWith(
-      textTheme: textTheme,
+      // Fusiona sobre el text theme base de Material: los estilos que definimos
+      // mandan, y los que no, conservan el color correcto del tema (evita texto
+      // sin color que se vuelve invisible en claro/oscuro).
+      textTheme: base.textTheme.merge(textTheme),
       appBarTheme: AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,

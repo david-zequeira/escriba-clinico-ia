@@ -28,6 +28,19 @@ fi
 ROOT=$(git rev-parse --show-toplevel)
 cd "$ROOT/frontend"
 
+# --- Guard i18n: ningún texto de usuario hardcodeado en widgets ---
+# Detecta literales en Text()/labelText/hintText/tooltip/message/content: Text().
+# Excluye l10n generado, la marca "Vionix" y los tests. Todo texto debe ir a
+# lib/l10n/*.arb y usarse con context.l10n (ver CLAUDE.md §11).
+echo "▶ guard i18n (sin texto hardcodeado)…"
+HARDCODED=$(grep -rnE "(Text\(|labelText:|hintText:|tooltip:|message:|content: Text\(|label: Text\()[[:space:]]*['\"][^'\"]*[A-Za-zÁÉÍÓÚáéíóúñ]" lib 2>/dev/null \
+  | grep -v "/l10n/" | grep -vi "Vionix" || true)
+if [ -n "$HARDCODED" ]; then
+  echo "✖ Texto hardcodeado detectado — usa context.l10n y añade la clave a lib/l10n/*.arb:"
+  echo "$HARDCODED"
+  exit 1
+fi
+
 echo "▶ flutter analyze…"
 $FLUTTER analyze || { echo "✖ 'flutter analyze' encontró problemas — push abortado."; exit 1; }
 
