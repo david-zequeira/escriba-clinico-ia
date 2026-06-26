@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
+import 'package:escriba_clinico/core/l10n_ext.dart';
+
 /// Aviso de transparencia: el borrador fue generado con asistencia de IA.
 class AiBanner extends StatelessWidget {
   const AiBanner({super.key});
@@ -37,11 +39,11 @@ class AiBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Borrador con asistencia de IA',
+                  context.l10n.aiBannerTitle,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 Text(
-                  'Los campos marcados como «Revisar» requieren confirmación explícita.',
+                  context.l10n.aiBannerSubtitle,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

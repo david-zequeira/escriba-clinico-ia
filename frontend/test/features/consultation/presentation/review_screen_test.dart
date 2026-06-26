@@ -4,6 +4,7 @@ import 'package:escriba_clinico/features/consultation/domain/entities/transcript
 import 'package:escriba_clinico/features/consultation/domain/repositories/consultation_repository.dart';
 import 'package:escriba_clinico/features/consultation/presentation/screens/review_screen.dart';
 import 'package:escriba_clinico/features/consultation/state_management/consultation_controller.dart';
+import 'package:escriba_clinico/l10n/app_localizations.dart';
 import 'package:escriba_clinico/models/consultation_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,7 +66,7 @@ void main() {
         overrides: [
           consultationProvider.overrideWith((ref) => _SeededController(seeded)),
         ],
-        child: const MaterialApp(home: ReviewScreen()),
+        child: const MaterialApp(home: ReviewScreen(), locale: Locale('es'), localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: [Locale('es'), Locale('en')]),
       ),
     );
     await tester.pumpAndSettle();
@@ -121,7 +122,7 @@ void main() {
         overrides: [
           consultationProvider.overrideWith((ref) => _SeededController(seeded)),
         ],
-        child: const MaterialApp(home: ReviewScreen()),
+        child: const MaterialApp(home: ReviewScreen(), locale: Locale('es'), localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: [Locale('es'), Locale('en')]),
       ),
     );
     await tester.pumpAndSettle();

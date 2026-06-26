@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
+import 'package:escriba_clinico/core/l10n_ext.dart';
 import 'package:escriba_clinico/models/consultation_type.dart';
 
 /// Panel de progreso del procesamiento: grabación → transcripción → borrador.
@@ -22,24 +23,25 @@ class RecordingTimelinePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final recordingDone =
         !recording && (finalizing || serverProcessing || errorMessage != null);
     final steps = [
-      _StepData('Grabación', Icons.mic_none_rounded, recording, recordingDone),
+      _StepData(l.stepRecording, Icons.mic_none_rounded, recording, recordingDone),
       _StepData(
-        'Transcripción',
+        l.stepTranscription,
         Icons.graphic_eq_rounded,
         serverProcessing && !finalizing,
         false,
       ),
-      const _StepData('Borrador clínico', Icons.article_outlined, false, false),
+      _StepData(l.stepClinicalDraft, Icons.article_outlined, false, false),
     ];
 
     return GlassSurface(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Progreso', style: Theme.of(context).textTheme.titleMedium),
+          Text(l.progress, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 20),
           ...steps.asMap().entries.map((e) {
             final step = e.value;
@@ -54,9 +56,7 @@ class RecordingTimelinePanel extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              finalizing
-                  ? 'Guardando audio localmente…'
-                  : 'Procesando en el servidor (STT + borrador)…',
+              finalizing ? l.savingAudioLocally : l.processingOnServer,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],

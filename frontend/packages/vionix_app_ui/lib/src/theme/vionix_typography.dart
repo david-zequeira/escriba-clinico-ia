@@ -29,6 +29,11 @@ TextTheme buildVionixTextTheme(VionixTokens t) {
       fontWeight: FontWeight.w600,
       color: t.textPrimary,
     ),
+    titleSmall: TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      color: t.textPrimary,
+    ),
     bodyLarge: TextStyle(fontSize: 16, height: 1.5, color: t.textSecondary),
     bodyMedium: TextStyle(fontSize: 14, height: 1.45, color: t.textSecondary),
     bodySmall: TextStyle(fontSize: 12, height: 1.4, color: t.textTertiary),

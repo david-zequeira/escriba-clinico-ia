@@ -209,3 +209,26 @@ convención de arriba (dominio + repo + controller).
 
 > Backend: mantiene su propia suite `pytest` (ver `backend/README.md`). Puede añadirse al
 > hook o a CI cuando el equipo lo decida.
+
+---
+
+## 11. Internacionalización (i18n) — REGLA PERMANENTE
+
+La app usa `gen_l10n` con **español (por defecto/fallback) e inglés**. Archivos en
+`frontend/lib/l10n/` (`app_es.arb`, `app_en.arb`); acceso vía `context.l10n.<clave>`
+(extensión en `frontend/lib/core/l10n_ext.dart`).
+
+**Regla para asistentes de IA y el equipo:** **nunca** escribas texto de usuario
+*hardcodeado* en los widgets. Cada cadena nueva visible:
+1. Se añade como clave en **`app_en.arb` y `app_es.arb`** (ambos; con placeholders si lleva
+   variables).
+2. Se usa en la UI con `context.l10n.<clave>` (jamás un literal).
+3. Los estilos de texto salen **siempre del theme** (`Theme.of(context).textTheme` /
+   `context.tokens`), nunca colores hardcodeados, para que se vean bien en claro/oscuro.
+
+> Persistencia de preferencias (p. ej. tema): `shared_preferences` desde el controller
+> Riverpod (cargar en el constructor, guardar en cada cambio) — equivalente a `hydrated_bloc`.
+>
+> Pendiente de migrar a i18n (cadenas en clases sin `BuildContext`): etiquetas de
+> `ConsultationType`, `DocumentTemplates`, `Speaker`, chips de estado y mensajes de error
+> lanzados. Migrar cuando se toquen, pasando los textos ya traducidos desde la capa de UI.

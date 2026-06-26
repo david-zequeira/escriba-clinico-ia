@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
+import 'package:escriba_clinico/core/l10n_ext.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/transcript.dart';
 
 /// Panel de la conversación. Resalta los segmentos que respaldan el campo
@@ -13,13 +14,15 @@ class TranscriptPanel extends StatefulWidget {
     required this.transcript,
     this.highlighted = const {},
     this.onSegmentTap,
-    this.title = 'Conversación',
+    this.title,
   });
 
   final Transcript transcript;
   final Set<int> highlighted;
   final ValueChanged<int>? onSegmentTap;
-  final String title;
+
+  /// Título del panel. Si es null, usa "Conversación" traducido.
+  final String? title;
 
   @override
   State<TranscriptPanel> createState() => _TranscriptPanelState();
@@ -79,7 +82,7 @@ class _TranscriptPanelState extends State<TranscriptPanel> {
               Icon(Icons.forum_outlined, size: 18, color: t.textSecondary),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(widget.title,
+                child: Text(widget.title ?? context.l10n.conversation,
                     style: Theme.of(context).textTheme.titleMedium),
               ),
             ],
@@ -87,13 +90,13 @@ class _TranscriptPanelState extends State<TranscriptPanel> {
           const SizedBox(height: 4),
           Text(
             widget.highlighted.isEmpty
-                ? 'Toca «ver evidencia» en un campo, o un fragmento aquí, para enlazarlos.'
-                : 'Resaltado: el origen del campo seleccionado.',
+                ? context.l10n.evidenceHintEmpty
+                : context.l10n.evidenceHintSelected,
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
           if (widget.transcript.isEmpty)
-            Text('Sin transcripción disponible.',
+            Text(context.l10n.noTranscript,
                 style: Theme.of(context).textTheme.bodyMedium)
           else
             for (var i = 0; i < widget.transcript.segments.length; i++)

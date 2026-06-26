@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
+import 'package:escriba_clinico/core/l10n_ext.dart';
 import 'package:escriba_clinico/features/consultation/presentation/screens/recording_screen.dart';
 import 'package:escriba_clinico/models/consultation_type.dart';
 
@@ -62,7 +63,7 @@ class TypeCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Comenzar',
+                    context.l10n.start,
                     style:
                         TextStyle(fontWeight: FontWeight.w600, color: acc.accent),
                   ),

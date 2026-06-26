@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
+import 'package:escriba_clinico/core/l10n_ext.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/clinical_draft.dart';
 import 'package:escriba_clinico/models/document_templates.dart';
 
@@ -148,7 +149,7 @@ class _PlanillaFieldState extends State<PlanillaField> {
                 minLines: 3,
                 maxLines: null,
                 decoration: InputDecoration(
-                  hintText: _isFilled ? null : 'Pendiente — completa manualmente…',
+                  hintText: _isFilled ? null : context.l10n.pendingFieldHint,
                   filled: true,
                   fillColor: status.fieldBackground,
                 ),
@@ -250,7 +251,7 @@ class _EvidenceButton extends StatelessWidget {
     final t = context.tokens;
     final color = selected ? t.primary : t.textTertiary;
     return Tooltip(
-      message: count > 1 ? 'Ver de dónde salió ($count fragmentos)' : 'Ver de dónde salió',
+      message: count > 1 ? context.l10n.showEvidenceCount(count) : context.l10n.showEvidence,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(VionixRadii.sm),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
+import 'package:escriba_clinico/core/l10n_ext.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/clinical_draft.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/transcript.dart';
 import 'package:escriba_clinico/features/consultation/presentation/widgets/review_ai_banner.dart';
@@ -60,7 +61,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
           child: TranscriptPanel(
             transcript: Transcript(segments: cited),
             highlighted: {for (var i = 0; i < cited.length; i++) i},
-            title: 'Evidencia · $label',
+            title: context.l10n.evidenceTitle(label),
           ),
         ),
       ),
@@ -104,8 +105,8 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: 'Revisión',
-        body: const Center(child: Text('Sin borrador todavía')),
+        title: context.l10n.review,
+        body: Center(child: Text(context.l10n.noDraftYet)),
       );
     }
 
@@ -141,7 +142,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
         icon: const Icon(Icons.arrow_back_rounded),
         onPressed: () => Navigator.of(context).pop(),
       ),
-      title: state.documentTitle ?? 'Revisión',
+      title: state.documentTitle ?? context.l10n.review,
       body: wide
           ? Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -224,21 +225,19 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
             onPressed: () {
               ref.read(consultationProvider.notifier).markReviewedLocally();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Borrador marcado como revisado (solo local)'),
-                ),
+                SnackBar(content: Text(context.l10n.draftMarkedReviewed)),
               );
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
             icon: const Icon(Icons.check_circle_outline),
-            label: const Text('Confirmar revisión'),
+            label: Text(context.l10n.confirmReview),
           ),
           Tooltip(
-            message: 'Disponible cuando se conecte al sistema del hospital',
+            message: context.l10n.sendToHisTooltip,
             child: OutlinedButton.icon(
               onPressed: null,
               icon: const Icon(Icons.cloud_upload_outlined),
-              label: const Text('Enviar al HIS'),
+              label: Text(context.l10n.sendToHis),
             ),
           ),
         ],

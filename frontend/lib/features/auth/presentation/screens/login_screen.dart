@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:escriba_clinico/core/l10n_ext.dart';
 import 'package:escriba_clinico/features/auth/state_management/auth_controller.dart';
 
 /// Login del médico. MVP: cualquier usuario/contraseña permite entrar.
@@ -41,6 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final width = MediaQuery.sizeOf(context).width;
     final formWidth = width >= 900 ? 400.0 : double.infinity;
 
@@ -76,26 +78,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Acceso para personal sanitario',
+                      l.loginSubtitle,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 28),
                     TextFormField(
                       controller: _userController,
-                      decoration: const InputDecoration(
-                        labelText: 'Usuario',
-                        prefixIcon: Icon(Icons.person_outline, size: 20),
+                      decoration: InputDecoration(
+                        labelText: l.fieldUser,
+                        prefixIcon: const Icon(Icons.person_outline, size: 20),
                       ),
                       textInputAction: TextInputAction.next,
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Introduce tu usuario' : null,
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? l.validatorUser : null,
                     ),
                     const SizedBox(height: 14),
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscure,
                       decoration: InputDecoration(
-                        labelText: 'Contraseña',
+                        labelText: l.fieldPassword,
                         prefixIcon: const Icon(Icons.lock_outline, size: 20),
                         suffixIcon: IconButton(
                           icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
@@ -103,7 +106,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                       onFieldSubmitted: (_) => _submit(),
-                      validator: (v) => (v == null || v.isEmpty) ? 'Introduce tu contraseña' : null,
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? l.validatorPassword : null,
                     ),
                     const SizedBox(height: 24),
                     FilledButton(
@@ -114,11 +118,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               width: 22,
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
-                          : const Text('Iniciar sesión'),
+                          : Text(l.signIn),
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Entorno de desarrollo: cualquier credencial válida.',
+                      l.devCredentialsHint,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
