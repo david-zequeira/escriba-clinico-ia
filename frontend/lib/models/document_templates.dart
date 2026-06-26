@@ -1,4 +1,4 @@
-import 'consultation_type.dart';
+import 'package:escriba_clinico/models/consultation_type.dart';
 
 /// Definición de un campo de la planilla clínica (espejo del backend).
 class DocumentSectionDef {

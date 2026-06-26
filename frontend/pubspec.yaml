@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  vionix_app_ui:                # design system: temas, motion y componentes
+    path: packages/vionix_app_ui
   flutter_riverpod: ^2.5.1      # gestión de estado
   dio: ^5.7.0                   # cliente HTTP
   record: ^5.2.1                # v6 exige record_macos (pub get falla si hay 403 en pub.dev)

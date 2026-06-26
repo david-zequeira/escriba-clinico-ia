@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/app_colors.dart';
-
 /// Tipos de documento clínico (espejo del backend).
 enum ConsultationType {
   admissionInterview('admission_interview'),
@@ -45,18 +43,6 @@ enum ConsultationType {
         ConsultationType.admissionInterview => Icons.people_alt_outlined,
         ConsultationType.treatmentOrders => Icons.medication_liquid_outlined,
         ConsultationType.evolution => Icons.show_chart_outlined,
-      };
-
-  Color get accentColor => switch (this) {
-        ConsultationType.admissionInterview => AppColors.admission,
-        ConsultationType.treatmentOrders => AppColors.treatment,
-        ConsultationType.evolution => AppColors.evolution,
-      };
-
-  Color get accentSoft => switch (this) {
-        ConsultationType.admissionInterview => AppColors.admissionSoft,
-        ConsultationType.treatmentOrders => AppColors.treatmentSoft,
-        ConsultationType.evolution => AppColors.evolutionSoft,
       };
 
   static ConsultationType fromApi(String value) => ConsultationType.values.firstWhere(
