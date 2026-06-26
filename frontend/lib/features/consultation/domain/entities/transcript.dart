@@ -1,3 +1,5 @@
+import 'package:escriba_clinico/l10n/app_localizations.dart';
+
 /// Interlocutor de un segmento de transcripción (diarización médico/paciente).
 enum Speaker {
   medico,
@@ -10,10 +12,11 @@ enum Speaker {
         _ => Speaker.desconocido,
       };
 
-  String get label => switch (this) {
-        Speaker.medico => 'Médico',
-        Speaker.paciente => 'Paciente',
-        Speaker.desconocido => 'Desconocido',
+  /// Etiqueta traducida del interlocutor.
+  String label(AppLocalizations l) => switch (this) {
+        Speaker.medico => l.speakerDoctor,
+        Speaker.paciente => l.speakerPatient,
+        Speaker.desconocido => l.speakerUnknown,
       };
 }
 

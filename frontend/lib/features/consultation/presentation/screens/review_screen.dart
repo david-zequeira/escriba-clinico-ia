@@ -123,7 +123,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
       context: context,
       note: note,
       template: template,
-      documentTitle: state.documentTitle ?? note.documentType.title,
+      documentTitle: state.documentTitle ?? note.documentType.title(context.l10n),
       patientId: state.patientId,
       filledCount: filledCount,
       evidenceBySection: state.evidenceBySection,
@@ -210,8 +210,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               hasEvidence: hasEvidence,
               evidenceCount: (evidenceBySection[def.key] ?? const []).length,
               isSelected: _selectedKey == def.key,
-              onShowEvidence:
-                  hasEvidence ? () => _showEvidence(def.key, def.label) : null,
+              onShowEvidence: hasEvidence
+                  ? () => _showEvidence(def.key, def.label(context.l10n))
+                  : null,
               onChanged: (value) => ref
                   .read(consultationProvider.notifier)
                   .updateSectionContent(def.key, value),

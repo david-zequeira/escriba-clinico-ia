@@ -174,7 +174,7 @@ class _SegmentTile extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      segment.speaker.label,
+                      segment.speaker.label(context.l10n),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,

@@ -181,4 +181,190 @@ class AppLocalizationsEs extends AppLocalizations {
   String showEvidenceCount(int count) {
     return 'Ver de dónde salió ($count fragmentos)';
   }
+
+  @override
+  String get speakerDoctor => 'Médico';
+
+  @override
+  String get speakerPatient => 'Paciente';
+
+  @override
+  String get speakerUnknown => 'Desconocido';
+
+  @override
+  String get fieldStatusAi => 'IA';
+
+  @override
+  String get fieldStatusEmpty => 'Vacío';
+
+  @override
+  String get fieldStatusReview => 'Revisar';
+
+  @override
+  String get patientIdLabel => 'Nº de identidad del paciente';
+
+  @override
+  String get patientIdHint => 'DNI, NIE u otro identificador';
+
+  @override
+  String get patientIdRequired =>
+      'Introduce el número de identidad del paciente';
+
+  @override
+  String get audioPathUnavailable => 'Ruta de audio no disponible.';
+
+  @override
+  String get emptyRecording =>
+      'La grabación está vacía. Comprueba el micrófono.';
+
+  @override
+  String get admissionTitle => 'Historia clínica de ingreso';
+
+  @override
+  String get admissionSubtitle =>
+      'Entrevista médico-paciente para valoración de ingreso.';
+
+  @override
+  String get admissionRecordingHint =>
+      'Graba la conversación con el paciente (consentimiento previo).';
+
+  @override
+  String get admissionShort => 'Ingreso';
+
+  @override
+  String get treatmentTitle => 'Indicaciones de tratamiento';
+
+  @override
+  String get treatmentSubtitle =>
+      'Dictado del médico con indicaciones para paciente ingresado.';
+
+  @override
+  String get treatmentRecordingHint =>
+      'Graba tus indicaciones en voz alta (sin paciente).';
+
+  @override
+  String get treatmentShort => 'Indicaciones';
+
+  @override
+  String get evolutionTitle => 'Nota de evolución';
+
+  @override
+  String get evolutionSubtitle => 'Evolución clínica de paciente ya ingresado.';
+
+  @override
+  String get evolutionRecordingHint =>
+      'Graba la evolución del paciente ingresado.';
+
+  @override
+  String get evolutionShort => 'Evolución';
+
+  @override
+  String get admMotivoLabel => 'Motivo de ingreso';
+
+  @override
+  String get admMotivoHint =>
+      'Motivo principal que origina el ingreso hospitalario.';
+
+  @override
+  String get admEnfermedadLabel => 'Enfermedad actual';
+
+  @override
+  String get admEnfermedadHint =>
+      'Cronología y características del cuadro actual.';
+
+  @override
+  String get admAntecedentesLabel => 'Antecedentes';
+
+  @override
+  String get admAntecedentesHint =>
+      'Personales, familiares, alergias y medicación habitual.';
+
+  @override
+  String get admExploracionLabel => 'Exploración física';
+
+  @override
+  String get admExploracionHint => 'Hallazgos objetivos de la exploración.';
+
+  @override
+  String get admPruebasLabel => 'Pruebas complementarias';
+
+  @override
+  String get admPruebasHint => 'Analítica, imagen u otras pruebas relevantes.';
+
+  @override
+  String get admJuicioLabel => 'Juicio clínico (borrador)';
+
+  @override
+  String get admJuicioHint =>
+      'Impresión diagnóstica preliminar. Requiere validación del médico.';
+
+  @override
+  String get admPlanLabel => 'Plan de ingreso y actuación';
+
+  @override
+  String get admPlanHint =>
+      'Conducta terapéutica, estudios pendientes y criterios de ingreso.';
+
+  @override
+  String get trtContextoLabel => 'Contexto del paciente';
+
+  @override
+  String get trtContextoHint =>
+      'Situación clínica actual del paciente ingresado.';
+
+  @override
+  String get trtFarmaLabel => 'Indicaciones farmacológicas';
+
+  @override
+  String get trtFarmaHint => 'Fármacos, dosis, vía y frecuencia.';
+
+  @override
+  String get trtNoFarmaLabel => 'Indicaciones no farmacológicas y cuidados';
+
+  @override
+  String get trtNoFarmaHint => 'Dieta, movilización, curas y otras medidas.';
+
+  @override
+  String get trtVigilanciaLabel => 'Vigilancia y constantes';
+
+  @override
+  String get trtVigilanciaHint => 'Controles, monitorización y alertas.';
+
+  @override
+  String get trtObservacionesLabel => 'Observaciones y prioridad';
+
+  @override
+  String get trtObservacionesHint =>
+      'Notas adicionales o prioridad de actuación.';
+
+  @override
+  String get evoSubjetivoLabel => 'Subjetivo';
+
+  @override
+  String get evoSubjetivoHint => 'Síntomas referidos por el paciente.';
+
+  @override
+  String get evoObjetivoLabel => 'Objetivo y exploración';
+
+  @override
+  String get evoObjetivoHint => 'Constantes, exploración y datos objetivos.';
+
+  @override
+  String get evoEvolucionLabel => 'Evolución clínica';
+
+  @override
+  String get evoEvolucionHint => 'Curso del cuadro desde el último registro.';
+
+  @override
+  String get evoJuicioLabel => 'Juicio clínico (borrador)';
+
+  @override
+  String get evoJuicioHint =>
+      'Impresión diagnóstica actual. Requiere validación del médico.';
+
+  @override
+  String get evoPlanLabel => 'Plan terapéutico y próximos pasos';
+
+  @override
+  String get evoPlanHint => 'Cambios de tratamiento y seguimiento.';
 }

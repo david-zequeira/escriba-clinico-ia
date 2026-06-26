@@ -3,6 +3,7 @@ import 'package:vionix_app_ui/vionix_app_ui.dart';
 
 import 'package:escriba_clinico/core/l10n_ext.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/clinical_draft.dart';
+import 'package:escriba_clinico/l10n/app_localizations.dart';
 import 'package:escriba_clinico/models/document_templates.dart';
 
 /// Campo editable de una sección de la planilla, con estado (IA / Vacío / Revisar).
@@ -69,7 +70,7 @@ class _PlanillaFieldState extends State<PlanillaField> {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final status = _fieldStatus(t);
+    final status = _fieldStatus(t, context.l10n);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -113,7 +114,7 @@ class _PlanillaFieldState extends State<PlanillaField> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.definition.label,
+                          widget.definition.label(context.l10n),
                           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: t.textPrimary,
@@ -121,7 +122,7 @@ class _PlanillaFieldState extends State<PlanillaField> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          widget.definition.hint,
+                          widget.definition.hint(context.l10n),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: t.textSecondary,
                               ),
@@ -162,14 +163,14 @@ class _PlanillaFieldState extends State<PlanillaField> {
     );
   }
 
-  _FieldStatus _fieldStatus(VionixTokens t) {
+  _FieldStatus _fieldStatus(VionixTokens t, AppLocalizations l) {
     if (widget.section.needsConfirmation && _isFilled) {
-      return _FieldStatus.review(t);
+      return _FieldStatus.review(t, l);
     }
     if (_isFilled) {
-      return _FieldStatus.filledByAi(t);
+      return _FieldStatus.filledByAi(t, l);
     }
-    return _FieldStatus.empty(t);
+    return _FieldStatus.empty(t, l);
   }
 }
 
@@ -199,9 +200,9 @@ class _FieldStatus {
   final bool highlighted;
 
   /// Campo rellenado por la IA (acento primario).
-  static _FieldStatus filledByAi(VionixTokens t) => _FieldStatus(
+  static _FieldStatus filledByAi(VionixTokens t, AppLocalizations l) => _FieldStatus(
         kind: _FieldStatusKind.filledByAi,
-        label: 'IA',
+        label: l.fieldStatusAi,
         borderColor: t.primary,
         numberBackground: t.primarySoft,
         numberColor: t.primary,
@@ -213,9 +214,9 @@ class _FieldStatus {
       );
 
   /// Campo vacío, pendiente de completar.
-  static _FieldStatus empty(VionixTokens t) => _FieldStatus(
+  static _FieldStatus empty(VionixTokens t, AppLocalizations l) => _FieldStatus(
         kind: _FieldStatusKind.empty,
-        label: 'Vacío',
+        label: l.fieldStatusEmpty,
         borderColor: t.border,
         numberBackground: t.surfaceMuted,
         numberColor: t.textTertiary,
@@ -225,9 +226,9 @@ class _FieldStatus {
       );
 
   /// Campo que requiere confirmación explícita del médico (acento de aviso).
-  static _FieldStatus review(VionixTokens t) => _FieldStatus(
+  static _FieldStatus review(VionixTokens t, AppLocalizations l) => _FieldStatus(
         kind: _FieldStatusKind.review,
-        label: 'Revisar',
+        label: l.fieldStatusReview,
         borderColor: t.warning,
         numberBackground: t.warningSoft,
         numberColor: t.warning,

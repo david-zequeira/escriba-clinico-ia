@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
 import 'package:escriba_clinico/core/l10n_ext.dart';
-import 'package:escriba_clinico/core/patient_identity_labels.dart';
 import 'package:escriba_clinico/models/consultation_type.dart';
 
 /// Panel de control de la grabación: identidad del paciente, botón de grabar,
@@ -39,21 +38,21 @@ class RecordingControlsPanel extends StatelessWidget {
         children: [
           InfoPill(
             icon: type.icon,
-            label: type.shortLabel,
+            label: type.shortLabel(l),
             color: acc.accent,
             background: acc.soft,
           ),
           const SizedBox(height: 20),
-          Text(type.recordingHint, style: Theme.of(context).textTheme.bodyLarge),
+          Text(type.recordingHint(l), style: Theme.of(context).textTheme.bodyLarge),
           const SizedBox(height: 24),
           TextField(
             controller: patientIdController,
             focusNode: patientIdFocus,
             enabled: !recording && !finalizing && !serverProcessing,
-            decoration: const InputDecoration(
-              labelText: PatientIdentityLabels.fieldLabel,
-              hintText: PatientIdentityLabels.hint,
-              prefixIcon: Icon(Icons.badge_outlined, size: 20),
+            decoration: InputDecoration(
+              labelText: l.patientIdLabel,
+              hintText: l.patientIdHint,
+              prefixIcon: const Icon(Icons.badge_outlined, size: 20),
             ),
             textCapitalization: TextCapitalization.characters,
             textInputAction: TextInputAction.done,

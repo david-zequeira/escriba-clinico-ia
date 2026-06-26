@@ -8,7 +8,6 @@ import 'package:path_provider/path_provider.dart';
 
 import 'package:escriba_clinico/core/config.dart';
 import 'package:escriba_clinico/core/l10n_ext.dart';
-import 'package:escriba_clinico/core/patient_identity_labels.dart';
 import 'package:escriba_clinico/features/audio/data/repositories/audio_repository_impl.dart';
 import 'package:escriba_clinico/features/consultation/presentation/screens/review_screen.dart';
 import 'package:escriba_clinico/features/consultation/presentation/widgets/recording_controls_panel.dart';
@@ -89,6 +88,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
 
   Future<void> _toggleRecording() async {
     final state = ref.read(consultationProvider);
+    final l = context.l10n;
     if (_finalizing || state.stage == ConsultationStage.processing) return;
 
     if (_recording) {
@@ -100,12 +100,12 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
       try {
         final tempPath = _tempPath;
         if (tempPath == null) {
-          throw StateError('Ruta de audio no disponible.');
+          throw StateError(l.audioPathUnavailable);
         }
 
         final audio = await _audio.stop(tempPath: tempPath);
         if (audio.bytes.isEmpty) {
-          throw StateError('La grabación está vacía. Comprueba el micrófono.');
+          throw StateError(l.emptyRecording);
         }
 
         if (!mounted) return;
@@ -139,7 +139,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
     final patientId = _patientIdController.text.trim();
     if (patientId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(PatientIdentityLabels.requiredMessage)),
+        SnackBar(content: Text(l.patientIdRequired)),
       );
       _patientIdFocus.requestFocus();
       return;
@@ -214,7 +214,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
               icon: const Icon(Icons.arrow_back_rounded),
               onPressed: serverProcessing ? null : () => Navigator.of(context).pop(),
             ),
-            title: type.title,
+            title: type.title(l),
             body: SingleChildScrollView(
               child: FadeSlideIn(
                 child: Column(

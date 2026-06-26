@@ -76,7 +76,7 @@ class RecordingTimelinePanel extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 16),
-          Text(type.subtitle, style: Theme.of(context).textTheme.bodySmall),
+          Text(type.subtitle(l), style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );

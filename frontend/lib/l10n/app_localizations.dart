@@ -403,6 +403,348 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show where it came from ({count} fragments)'**
   String showEvidenceCount(int count);
+
+  /// No description provided for @speakerDoctor.
+  ///
+  /// In en, this message translates to:
+  /// **'Doctor'**
+  String get speakerDoctor;
+
+  /// No description provided for @speakerPatient.
+  ///
+  /// In en, this message translates to:
+  /// **'Patient'**
+  String get speakerPatient;
+
+  /// No description provided for @speakerUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get speakerUnknown;
+
+  /// No description provided for @fieldStatusAi.
+  ///
+  /// In en, this message translates to:
+  /// **'AI'**
+  String get fieldStatusAi;
+
+  /// No description provided for @fieldStatusEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty'**
+  String get fieldStatusEmpty;
+
+  /// No description provided for @fieldStatusReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get fieldStatusReview;
+
+  /// No description provided for @patientIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Patient ID number'**
+  String get patientIdLabel;
+
+  /// No description provided for @patientIdHint.
+  ///
+  /// In en, this message translates to:
+  /// **'National ID or other identifier'**
+  String get patientIdHint;
+
+  /// No description provided for @patientIdRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the patient\'s ID number'**
+  String get patientIdRequired;
+
+  /// No description provided for @audioPathUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio path unavailable.'**
+  String get audioPathUnavailable;
+
+  /// No description provided for @emptyRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording is empty. Check the microphone.'**
+  String get emptyRecording;
+
+  /// No description provided for @admissionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hospital admission note'**
+  String get admissionTitle;
+
+  /// No description provided for @admissionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Doctor–patient interview for admission assessment.'**
+  String get admissionSubtitle;
+
+  /// No description provided for @admissionRecordingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Record the conversation with the patient (with prior consent).'**
+  String get admissionRecordingHint;
+
+  /// No description provided for @admissionShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Admission'**
+  String get admissionShort;
+
+  /// No description provided for @treatmentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Treatment orders'**
+  String get treatmentTitle;
+
+  /// No description provided for @treatmentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Doctor\'s dictation with orders for an admitted patient.'**
+  String get treatmentSubtitle;
+
+  /// No description provided for @treatmentRecordingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Record your orders out loud (no patient).'**
+  String get treatmentRecordingHint;
+
+  /// No description provided for @treatmentShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders'**
+  String get treatmentShort;
+
+  /// No description provided for @evolutionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress note'**
+  String get evolutionTitle;
+
+  /// No description provided for @evolutionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clinical progress of an already-admitted patient.'**
+  String get evolutionSubtitle;
+
+  /// No description provided for @evolutionRecordingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Record the progress of the admitted patient.'**
+  String get evolutionRecordingHint;
+
+  /// No description provided for @evolutionShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get evolutionShort;
+
+  /// No description provided for @admMotivoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason for admission'**
+  String get admMotivoLabel;
+
+  /// No description provided for @admMotivoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Main reason for the hospital admission.'**
+  String get admMotivoHint;
+
+  /// No description provided for @admEnfermedadLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Present illness'**
+  String get admEnfermedadLabel;
+
+  /// No description provided for @admEnfermedadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Chronology and features of the current condition.'**
+  String get admEnfermedadHint;
+
+  /// No description provided for @admAntecedentesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get admAntecedentesLabel;
+
+  /// No description provided for @admAntecedentesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal, family, allergies and usual medication.'**
+  String get admAntecedentesHint;
+
+  /// No description provided for @admExploracionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Physical examination'**
+  String get admExploracionLabel;
+
+  /// No description provided for @admExploracionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Objective examination findings.'**
+  String get admExploracionHint;
+
+  /// No description provided for @admPruebasLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Complementary tests'**
+  String get admPruebasLabel;
+
+  /// No description provided for @admPruebasHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Lab work, imaging or other relevant tests.'**
+  String get admPruebasHint;
+
+  /// No description provided for @admJuicioLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Clinical assessment (draft)'**
+  String get admJuicioLabel;
+
+  /// No description provided for @admJuicioHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Preliminary diagnostic impression. Requires doctor validation.'**
+  String get admJuicioHint;
+
+  /// No description provided for @admPlanLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Admission and action plan'**
+  String get admPlanLabel;
+
+  /// No description provided for @admPlanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Therapeutic approach, pending studies and admission criteria.'**
+  String get admPlanHint;
+
+  /// No description provided for @trtContextoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Patient context'**
+  String get trtContextoLabel;
+
+  /// No description provided for @trtContextoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Current clinical situation of the admitted patient.'**
+  String get trtContextoHint;
+
+  /// No description provided for @trtFarmaLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pharmacological orders'**
+  String get trtFarmaLabel;
+
+  /// No description provided for @trtFarmaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drugs, dose, route and frequency.'**
+  String get trtFarmaHint;
+
+  /// No description provided for @trtNoFarmaLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Non-pharmacological orders and care'**
+  String get trtNoFarmaLabel;
+
+  /// No description provided for @trtNoFarmaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Diet, mobilization, wound care and other measures.'**
+  String get trtNoFarmaHint;
+
+  /// No description provided for @trtVigilanciaLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Monitoring and vital signs'**
+  String get trtVigilanciaLabel;
+
+  /// No description provided for @trtVigilanciaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Checks, monitoring and alerts.'**
+  String get trtVigilanciaHint;
+
+  /// No description provided for @trtObservacionesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes and priority'**
+  String get trtObservacionesLabel;
+
+  /// No description provided for @trtObservacionesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional notes or action priority.'**
+  String get trtObservacionesHint;
+
+  /// No description provided for @evoSubjetivoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Subjective'**
+  String get evoSubjetivoLabel;
+
+  /// No description provided for @evoSubjetivoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Symptoms reported by the patient.'**
+  String get evoSubjetivoHint;
+
+  /// No description provided for @evoObjetivoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Objective and examination'**
+  String get evoObjetivoLabel;
+
+  /// No description provided for @evoObjetivoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Vital signs, examination and objective data.'**
+  String get evoObjetivoHint;
+
+  /// No description provided for @evoEvolucionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Clinical progress'**
+  String get evoEvolucionLabel;
+
+  /// No description provided for @evoEvolucionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Course of the condition since the last entry.'**
+  String get evoEvolucionHint;
+
+  /// No description provided for @evoJuicioLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Clinical assessment (draft)'**
+  String get evoJuicioLabel;
+
+  /// No description provided for @evoJuicioHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Current diagnostic impression. Requires doctor validation.'**
+  String get evoJuicioHint;
+
+  /// No description provided for @evoPlanLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Therapeutic plan and next steps'**
+  String get evoPlanLabel;
+
+  /// No description provided for @evoPlanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Treatment changes and follow-up.'**
+  String get evoPlanHint;
 }
 
 class _AppLocalizationsDelegate

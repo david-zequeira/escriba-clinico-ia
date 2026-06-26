@@ -170,7 +170,7 @@ class _ThemeToggleButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     return IconButton(
-      tooltip: 'Cambiar tema',
+      tooltip: context.l10n.toggleTheme,
       icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
       onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
     );

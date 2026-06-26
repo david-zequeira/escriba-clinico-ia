@@ -18,6 +18,7 @@ class TypeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final acc = context.tokens.accentFor(type.apiValue);
     return HoverScaleCard(
       accentColor: acc.accent,
@@ -38,11 +39,11 @@ class TypeCard extends StatelessWidget {
               child: Icon(type.icon, color: acc.accent, size: 22),
             ),
             const SizedBox(height: 12),
-            Text(type.shortLabel.toUpperCase(),
+            Text(type.shortLabel(l).toUpperCase(),
                 style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 4),
             Text(
-              type.title,
+              type.title(l),
               style: Theme.of(context).textTheme.titleMedium,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -50,7 +51,7 @@ class TypeCard extends StatelessWidget {
             const SizedBox(height: 6),
             Flexible(
               child: Text(
-                type.subtitle,
+                type.subtitle(l),
                 style: Theme.of(context).textTheme.bodySmall,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,

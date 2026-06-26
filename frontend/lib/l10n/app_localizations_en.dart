@@ -179,4 +179,189 @@ class AppLocalizationsEn extends AppLocalizations {
   String showEvidenceCount(int count) {
     return 'Show where it came from ($count fragments)';
   }
+
+  @override
+  String get speakerDoctor => 'Doctor';
+
+  @override
+  String get speakerPatient => 'Patient';
+
+  @override
+  String get speakerUnknown => 'Unknown';
+
+  @override
+  String get fieldStatusAi => 'AI';
+
+  @override
+  String get fieldStatusEmpty => 'Empty';
+
+  @override
+  String get fieldStatusReview => 'Review';
+
+  @override
+  String get patientIdLabel => 'Patient ID number';
+
+  @override
+  String get patientIdHint => 'National ID or other identifier';
+
+  @override
+  String get patientIdRequired => 'Enter the patient\'s ID number';
+
+  @override
+  String get audioPathUnavailable => 'Audio path unavailable.';
+
+  @override
+  String get emptyRecording => 'The recording is empty. Check the microphone.';
+
+  @override
+  String get admissionTitle => 'Hospital admission note';
+
+  @override
+  String get admissionSubtitle =>
+      'Doctor–patient interview for admission assessment.';
+
+  @override
+  String get admissionRecordingHint =>
+      'Record the conversation with the patient (with prior consent).';
+
+  @override
+  String get admissionShort => 'Admission';
+
+  @override
+  String get treatmentTitle => 'Treatment orders';
+
+  @override
+  String get treatmentSubtitle =>
+      'Doctor\'s dictation with orders for an admitted patient.';
+
+  @override
+  String get treatmentRecordingHint =>
+      'Record your orders out loud (no patient).';
+
+  @override
+  String get treatmentShort => 'Orders';
+
+  @override
+  String get evolutionTitle => 'Progress note';
+
+  @override
+  String get evolutionSubtitle =>
+      'Clinical progress of an already-admitted patient.';
+
+  @override
+  String get evolutionRecordingHint =>
+      'Record the progress of the admitted patient.';
+
+  @override
+  String get evolutionShort => 'Progress';
+
+  @override
+  String get admMotivoLabel => 'Reason for admission';
+
+  @override
+  String get admMotivoHint => 'Main reason for the hospital admission.';
+
+  @override
+  String get admEnfermedadLabel => 'Present illness';
+
+  @override
+  String get admEnfermedadHint =>
+      'Chronology and features of the current condition.';
+
+  @override
+  String get admAntecedentesLabel => 'History';
+
+  @override
+  String get admAntecedentesHint =>
+      'Personal, family, allergies and usual medication.';
+
+  @override
+  String get admExploracionLabel => 'Physical examination';
+
+  @override
+  String get admExploracionHint => 'Objective examination findings.';
+
+  @override
+  String get admPruebasLabel => 'Complementary tests';
+
+  @override
+  String get admPruebasHint => 'Lab work, imaging or other relevant tests.';
+
+  @override
+  String get admJuicioLabel => 'Clinical assessment (draft)';
+
+  @override
+  String get admJuicioHint =>
+      'Preliminary diagnostic impression. Requires doctor validation.';
+
+  @override
+  String get admPlanLabel => 'Admission and action plan';
+
+  @override
+  String get admPlanHint =>
+      'Therapeutic approach, pending studies and admission criteria.';
+
+  @override
+  String get trtContextoLabel => 'Patient context';
+
+  @override
+  String get trtContextoHint =>
+      'Current clinical situation of the admitted patient.';
+
+  @override
+  String get trtFarmaLabel => 'Pharmacological orders';
+
+  @override
+  String get trtFarmaHint => 'Drugs, dose, route and frequency.';
+
+  @override
+  String get trtNoFarmaLabel => 'Non-pharmacological orders and care';
+
+  @override
+  String get trtNoFarmaHint =>
+      'Diet, mobilization, wound care and other measures.';
+
+  @override
+  String get trtVigilanciaLabel => 'Monitoring and vital signs';
+
+  @override
+  String get trtVigilanciaHint => 'Checks, monitoring and alerts.';
+
+  @override
+  String get trtObservacionesLabel => 'Notes and priority';
+
+  @override
+  String get trtObservacionesHint => 'Additional notes or action priority.';
+
+  @override
+  String get evoSubjetivoLabel => 'Subjective';
+
+  @override
+  String get evoSubjetivoHint => 'Symptoms reported by the patient.';
+
+  @override
+  String get evoObjetivoLabel => 'Objective and examination';
+
+  @override
+  String get evoObjetivoHint => 'Vital signs, examination and objective data.';
+
+  @override
+  String get evoEvolucionLabel => 'Clinical progress';
+
+  @override
+  String get evoEvolucionHint =>
+      'Course of the condition since the last entry.';
+
+  @override
+  String get evoJuicioLabel => 'Clinical assessment (draft)';
+
+  @override
+  String get evoJuicioHint =>
+      'Current diagnostic impression. Requires doctor validation.';
+
+  @override
+  String get evoPlanLabel => 'Therapeutic plan and next steps';
+
+  @override
+  String get evoPlanHint => 'Treatment changes and follow-up.';
 }
