@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:escriba_clinico/core/app_log.dart';
 import 'package:escriba_clinico/features/audio/data/repositories/audio_repository_impl.dart';
 import 'package:escriba_clinico/features/audio/domain/repositories/audio_repository.dart';
 import 'package:escriba_clinico/features/consultation/data/repositories/transcription_stream_repository_impl.dart';
@@ -71,23 +72,31 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
     _finalized.clear();
     _partial = null;
 
+    devLog('F2.live', 'start consultation=$consultationId');
     try {
       await _audio.start(tempPath);
+      devLog('F2.live', 'micrófono iniciado');
       _amplitudeSub = _audio.amplitudeStream().listen(
             (level) => state = state.copyWith(amplitude: level),
-            onError: (_) {},
+            onError: (e) => devLog('F2.live', 'error amplitud: $e'),
           );
       _eventsSub = _transcription.connect(consultationId).listen(
             _onEvent,
-            onError: (e) => _fail(e.toString()),
+            onError: (e) {
+              devLog('F2.live', 'error stream: $e');
+              _fail(e.toString());
+            },
             onDone: () {
+              devLog('F2.live', 'stream finalizado (onDone)');
               if (state.status == LiveStatus.listening) {
                 state = state.copyWith(status: LiveStatus.stopped, amplitude: 0);
               }
             },
           );
       state = state.copyWith(status: LiveStatus.listening);
+      devLog('F2.live', 'estado=listening');
     } catch (e) {
+      devLog('F2.live', 'fallo en start: $e');
       _fail(e.toString());
     }
   }
@@ -118,12 +127,14 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
         _partial = segment;
         _rebuildTranscript();
       case TranscriptFinal(:final segment):
+        devLog('F2.live', 'final [${segment.speaker.name}] (${_finalized.length + 1} segmentos)');
         _finalized.add(segment);
         _partial = null;
         _rebuildTranscript();
       case TranscriptStreamError(:final message):
         _fail(message);
       case TranscriptStreamClosed():
+        devLog('F2.live', 'stream cerrado por el servidor');
         unawaited(_teardown());
         state = state.copyWith(status: LiveStatus.stopped, amplitude: 0);
     }

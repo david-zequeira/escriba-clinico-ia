@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'package:escriba_clinico/core/l10n_ext.dart';
+import 'package:escriba_clinico/core/temp_audio_path.dart';
 import 'package:escriba_clinico/features/consultation/presentation/widgets/live_controls_panel.dart';
 import 'package:escriba_clinico/features/consultation/presentation/widgets/transcript_panel.dart';
 import 'package:escriba_clinico/features/consultation/state_management/live_transcription_controller.dart';
@@ -71,9 +71,7 @@ class _LiveTranscriptionScreenState
     if (!await _confirmConsentIfNeeded()) return;
     if (!mounted) return;
     try {
-      final dir = await getTemporaryDirectory();
-      final tempPath =
-          '${dir.path}/live-${DateTime.now().millisecondsSinceEpoch}.wav';
+      final tempPath = await tempAudioPath(prefix: 'live');
       await ref
           .read(liveTranscriptionProvider.notifier)
           .start(_consultationId, tempPath: tempPath);

@@ -56,11 +56,14 @@ class TranscriptionStreamRepositoryImpl implements TranscriptionStreamRepository
 
 /// Fuente de la transcripción en vivo.
 ///
-/// HOY devuelve la fuente *fake* (front-first: no hay backend WS todavía).
-/// Cuando el backend exponga `ws://…/consultations/{id}/stream`, basta cambiar
-/// esta línea por `WebSocketTranscriptionSource()` — el resto no se entera.
+/// Conectada al backend real vía WebSocket (`ws://…/consultations/{id}/stream`).
+/// Para volver a la demo sin backend, sustituir por `FakeTranscriptionStreamSource()`.
+///
+/// Nota: hoy el backend responde con un proveedor *mock* (guion fijo) y no
+/// transcribe el audio real; eso llegará con el proveedor STT en streaming real
+/// (Gladia Real-Time). Aun así, esta ruta ya ejercita la tubería completa.
 final transcriptionStreamSourceProvider = Provider<TranscriptionStreamSource>(
-  (ref) => FakeTranscriptionStreamSource(),
+  (ref) => WebSocketTranscriptionSource(),
 );
 
 final transcriptionStreamRepositoryProvider =

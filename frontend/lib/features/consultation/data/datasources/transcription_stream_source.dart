@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import 'package:escriba_clinico/core/app_log.dart';
 import 'package:escriba_clinico/core/config.dart';
 
 /// Fuente de datos de la transcripción en vivo. Emite *frames* crudos
@@ -48,11 +49,16 @@ class WebSocketTranscriptionSource implements TranscriptionStreamSource {
 
   @override
   Stream<Map<String, dynamic>> frames(String consultationId) {
-    final channel = WebSocketChannel.connect(_streamUri(consultationId));
+    final uri = _streamUri(consultationId);
+    devLog('F2.ws', 'conectando a $uri');
+    final channel = WebSocketChannel.connect(uri);
     _channel = channel;
     return channel.stream.map((raw) {
       final decoded = jsonDecode(raw as String);
-      return Map<String, dynamic>.from(decoded as Map);
+      final frame = Map<String, dynamic>.from(decoded as Map);
+      devLog('F2.ws', '← frame ${frame['type']} '
+          '${frame['speaker'] ?? ''} "${frame['text'] ?? ''}"');
+      return frame;
     });
   }
 
@@ -63,11 +69,13 @@ class WebSocketTranscriptionSource implements TranscriptionStreamSource {
   Future<void> resume() async => _send({'type': 'resume'});
 
   void _send(Map<String, dynamic> control) {
+    devLog('F2.ws', '→ control ${control['type']}');
     _channel?.sink.add(jsonEncode(control));
   }
 
   @override
   Future<void> close() async {
+    devLog('F2.ws', 'cerrando canal');
     await _channel?.sink.close();
     _channel = null;
   }

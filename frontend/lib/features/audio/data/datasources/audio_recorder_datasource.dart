@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:record/record.dart';
 
+import 'package:escriba_clinico/features/audio/data/datasources/recording_bytes.dart';
 import 'package:escriba_clinico/features/audio/domain/entities/recorded_audio.dart';
 
 /// Fuente de datos de captura de audio multiplataforma (plugin `record`).
@@ -49,7 +50,8 @@ class AudioRecorderDataSource {
 
   /// macOS: el modo archivo de `record_darwin` finaliza el fichero en un callback
   /// nativo asíncrono. Stream + WAV en memoria evita ficheros temporales frágiles.
-  bool get _useStreamOnDesktop => Platform.isMacOS;
+  /// `!kIsWeb` primero: en web `Platform` lanza `Unsupported operation`.
+  bool get _useStreamOnDesktop => !kIsWeb && Platform.isMacOS;
 
   Future<bool> hasPermission() => _recorder.hasPermission();
 
@@ -104,10 +106,33 @@ class AudioRecorderDataSource {
       throw StateError('Graba al menos un segundo antes de detener.');
     }
 
+    if (kIsWeb) {
+      return _stopWebRecording();
+    }
     if (_streaming) {
       return _stopStreamRecording();
     }
     return _stopFileRecording(tempPath);
+  }
+
+  /// Web: `record` graba a un blob; `stop()` devuelve una URL `blob:…` que
+  /// descargamos para obtener los bytes (no hay sistema de ficheros).
+  Future<RecordedAudio> _stopWebRecording() async {
+    String? url;
+    try {
+      url = await _recorder.stop().timeout(const Duration(seconds: 8));
+    } catch (_) {
+      // Seguimos: intentamos recuperar el blob de todos modos.
+    }
+
+    final bytes = url != null ? await fetchRecordingBytes(url) : null;
+    await _resetRecorder();
+    if (bytes == null || bytes.isEmpty) {
+      throw StateError(
+        'La grabación está vacía. Comprueba el permiso de micrófono del navegador.',
+      );
+    }
+    return RecordedAudio(bytes: bytes, filename: 'consulta.webm');
   }
 
   Future<RecordedAudio> _stopStreamRecording() async {

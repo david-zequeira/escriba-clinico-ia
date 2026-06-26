@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:escriba_clinico/core/temp_audio_path.dart';
 
 import 'package:escriba_clinico/core/config.dart';
 import 'package:escriba_clinico/core/l10n_ext.dart';
@@ -147,9 +147,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
     }
 
     try {
-      final dir = await getTemporaryDirectory();
-      final ext = _audio.preferredExtension;
-      _tempPath = '${dir.path}/consulta-${DateTime.now().millisecondsSinceEpoch}.$ext';
+      _tempPath = await tempAudioPath(ext: _audio.preferredExtension);
       await _audio.start(_tempPath!);
       setState(() => _recording = true);
       _patientIdFocus.unfocus();
