@@ -131,6 +131,7 @@ class _SegmentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final isDoctor = segment.speaker == Speaker.medico;
+    final isPartial = segment.isPartial;
     final speakerColor = switch (segment.speaker) {
       Speaker.medico => t.primary,
       Speaker.paciente => t.info,
@@ -148,44 +149,69 @@ class _SegmentTile extends StatelessWidget {
             duration: VionixMotion.medium,
             curve: VionixMotion.standard,
             padding: const EdgeInsets.all(12),
+            // El parcial (interino) se ve tenue y con borde discontinuo de
+            // acento, para que el médico sepa que aún se está transcribiendo.
             decoration: BoxDecoration(
               color: highlighted
                   ? speakerColor.withValues(alpha: 0.10)
-                  : t.surfaceMuted,
+                  : isPartial
+                      ? speakerColor.withValues(alpha: 0.04)
+                      : t.surfaceMuted,
               borderRadius: BorderRadius.circular(VionixRadii.md),
               border: Border.all(
                 color: highlighted
                     ? speakerColor.withValues(alpha: 0.6)
-                    : t.borderSubtle,
+                    : isPartial
+                        ? speakerColor.withValues(alpha: 0.4)
+                        : t.borderSubtle,
                 width: highlighted ? 1.5 : 1,
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      isDoctor
-                          ? Icons.medical_services_outlined
-                          : Icons.person_outline,
-                      size: 14,
-                      color: speakerColor,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      segment.speaker.label(context.l10n),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+            child: Opacity(
+              opacity: isPartial ? 0.7 : 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        isDoctor
+                            ? Icons.medical_services_outlined
+                            : Icons.person_outline,
+                        size: 14,
                         color: speakerColor,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(segment.text, style: Theme.of(context).textTheme.bodyMedium),
-              ],
+                      const SizedBox(width: 6),
+                      Text(
+                        segment.speaker.label(context.l10n),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: speakerColor,
+                        ),
+                      ),
+                      if (isPartial) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          context.l10n.transcribing,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                            color: t.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    segment.text,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontStyle: isPartial ? FontStyle.italic : FontStyle.normal,
+                        ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

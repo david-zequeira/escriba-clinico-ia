@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:escriba_clinico/core/config.dart';
 import 'package:escriba_clinico/core/l10n_ext.dart';
 import 'package:escriba_clinico/features/audio/data/repositories/audio_repository_impl.dart';
+import 'package:escriba_clinico/features/consultation/presentation/screens/live_transcription_screen.dart';
 import 'package:escriba_clinico/features/consultation/presentation/screens/review_screen.dart';
 import 'package:escriba_clinico/features/consultation/presentation/widgets/recording_controls_panel.dart';
 import 'package:escriba_clinico/features/consultation/data/repositories/consultation_repository_impl.dart';
@@ -215,6 +216,19 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
               onPressed: serverProcessing ? null : () => Navigator.of(context).pop(),
             ),
             title: type.title(l),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.sensors_rounded),
+                tooltip: l.liveOpen,
+                onPressed: _recording || showProgress
+                    ? null
+                    : () => Navigator.of(context).push(
+                          AppPageRoute(
+                            page: LiveTranscriptionScreen(consultationType: type),
+                          ),
+                        ),
+              ),
+            ],
             body: SingleChildScrollView(
               child: FadeSlideIn(
                 child: Column(

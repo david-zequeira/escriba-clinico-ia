@@ -24,6 +24,9 @@ class AudioRecorderDataSource {
   static const int _sampleRate = 16000;
   static const int _numChannels = 1;
 
+  /// Suelo de dBFS que mapeamos a 0 en el waveform. Por debajo es "silencio".
+  static const double _amplitudeFloorDb = -50.0;
+
   RecordConfig get _fileConfig {
     if (!_isDesktop) return const RecordConfig();
     return const RecordConfig(
@@ -72,6 +75,26 @@ class AudioRecorderDataSource {
       );
     }
     _startedAt = DateTime.now();
+  }
+
+  /// Pausa la captura sin cerrar la sesión (el micrófono sigue reservado).
+  Future<void> pause() => _recorder.pause();
+
+  /// Reanuda la captura tras una pausa.
+  Future<void> resume() => _recorder.resume();
+
+  /// Amplitud del micrófono normalizada a `0..1`. El plugin reporta dBFS
+  /// (≤ 0, con valores muy negativos en silencio): lo mapeamos desde el suelo
+  /// [_amplitudeFloorDb] hasta 0 dB. Cancela limpio al cerrar la suscripción.
+  Stream<double> amplitudeStream({
+    Duration interval = const Duration(milliseconds: 120),
+  }) {
+    return _recorder.onAmplitudeChanged(interval).map((a) {
+      final db = a.current;
+      if (db.isNaN || db.isInfinite) return 0.0;
+      final normalized = (db - _amplitudeFloorDb) / (0 - _amplitudeFloorDb);
+      return normalized.clamp(0.0, 1.0);
+    });
   }
 
   /// Detiene la grabación y devuelve los bytes del audio.

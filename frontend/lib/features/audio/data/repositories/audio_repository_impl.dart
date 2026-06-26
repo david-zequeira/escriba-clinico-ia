@@ -20,6 +20,16 @@ class AudioRepositoryImpl implements AudioRepository {
   Future<void> start(String tempPath) => _source.start(tempPath);
 
   @override
+  Future<void> pause() => _source.pause();
+
+  @override
+  Future<void> resume() => _source.resume();
+
+  @override
+  Stream<double> amplitudeStream({Duration interval = const Duration(milliseconds: 120)}) =>
+      _source.amplitudeStream(interval: interval);
+
+  @override
   Future<RecordedAudio> stop({required String tempPath}) =>
       _source.stopRecording(tempPath: tempPath);
 

@@ -27,12 +27,18 @@ class TranscriptSegment {
     required this.text,
     this.startMs,
     this.endMs,
+    this.isPartial = false,
   });
 
   final Speaker speaker;
   final String text;
   final int? startMs;
   final int? endMs;
+
+  /// `true` mientras es un resultado *parcial* (interino) del streaming: aún
+  /// puede cambiar antes de consolidarse como segmento final. La UI lo muestra
+  /// de forma tenue para que el médico sepa que todavía se está transcribiendo.
+  final bool isPartial;
 }
 
 /// Transcripción completa de una consulta. Entidad de dominio.

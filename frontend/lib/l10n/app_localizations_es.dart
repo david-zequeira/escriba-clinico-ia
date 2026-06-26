@@ -367,4 +367,53 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get evoPlanHint => 'Cambios de tratamiento y seguimiento.';
+
+  @override
+  String get liveOpen => 'Transcripción en vivo';
+
+  @override
+  String get liveRecordingHint =>
+      'La transcripción aparece en tiempo real mientras hablas. El audio no se guarda.';
+
+  @override
+  String get liveTranscriptTitle => 'Transcripción en vivo';
+
+  @override
+  String get transcribing => 'transcribiendo…';
+
+  @override
+  String get liveMicIdle => 'Pulsa «Iniciar» para empezar a capturar.';
+
+  @override
+  String get livePaused => 'Sesión en pausa.';
+
+  @override
+  String get liveStart => 'Iniciar transcripción';
+
+  @override
+  String get livePause => 'Pausar';
+
+  @override
+  String get liveResume => 'Reanudar';
+
+  @override
+  String get liveFinish => 'Finalizar';
+
+  @override
+  String get liveStatusIdle => 'Sin iniciar';
+
+  @override
+  String get liveStatusConnecting => 'Conectando…';
+
+  @override
+  String get liveStatusListening => 'Escuchando';
+
+  @override
+  String get liveStatusPaused => 'En pausa';
+
+  @override
+  String get liveStatusStopped => 'Finalizada';
+
+  @override
+  String get liveStatusError => 'Error';
 }

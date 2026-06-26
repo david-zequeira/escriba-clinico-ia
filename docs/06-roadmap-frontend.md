@@ -53,6 +53,12 @@ batería de pruebas por feature y **hook `pre-push`** que corre analyze + tests.
 
 ## Fase F2 — Captura en vivo (streaming · front-led + WS backend)
 
+> **Estado: Slice 1 implementado (front-led, mock).** Pantalla de transcripción en
+> vivo (parciales + diarización) sobre `FakeTranscriptionStreamSource`, waveform con
+> **amplitud real** del micrófono y control **pausar/reanudar**. El contrato WebSocket
+> queda documentado en [`07-contrato-streaming.md`](07-contrato-streaming.md) para el
+> backend. Pendiente (Slice 2): borrador que se construye en vivo + endpoint WS real.
+
 **Objetivo:** reducir la espera y dar sensación de producto "en tiempo real".
 
 - **Alcance frontend:**

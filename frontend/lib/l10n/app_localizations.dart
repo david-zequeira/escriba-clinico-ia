@@ -745,6 +745,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Treatment changes and follow-up.'**
   String get evoPlanHint;
+
+  /// No description provided for @liveOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Live transcription'**
+  String get liveOpen;
+
+  /// No description provided for @liveRecordingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The transcription appears in real time as you speak. Audio is not stored.'**
+  String get liveRecordingHint;
+
+  /// No description provided for @liveTranscriptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live transcription'**
+  String get liveTranscriptTitle;
+
+  /// No description provided for @transcribing.
+  ///
+  /// In en, this message translates to:
+  /// **'transcribing…'**
+  String get transcribing;
+
+  /// No description provided for @liveMicIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Press “Start” to begin capturing.'**
+  String get liveMicIdle;
+
+  /// No description provided for @livePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Session paused.'**
+  String get livePaused;
+
+  /// No description provided for @liveStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start transcription'**
+  String get liveStart;
+
+  /// No description provided for @livePause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get livePause;
+
+  /// No description provided for @liveResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get liveResume;
+
+  /// No description provided for @liveFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get liveFinish;
+
+  /// No description provided for @liveStatusIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get liveStatusIdle;
+
+  /// No description provided for @liveStatusConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get liveStatusConnecting;
+
+  /// No description provided for @liveStatusListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get liveStatusListening;
+
+  /// No description provided for @liveStatusPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get liveStatusPaused;
+
+  /// No description provided for @liveStatusStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished'**
+  String get liveStatusStopped;
+
+  /// No description provided for @liveStatusError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get liveStatusError;
 }
 
 class _AppLocalizationsDelegate

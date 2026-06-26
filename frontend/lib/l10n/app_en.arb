@@ -125,5 +125,22 @@
   "evoJuicioLabel": "Clinical assessment (draft)",
   "evoJuicioHint": "Current diagnostic impression. Requires doctor validation.",
   "evoPlanLabel": "Therapeutic plan and next steps",
-  "evoPlanHint": "Treatment changes and follow-up."
+  "evoPlanHint": "Treatment changes and follow-up.",
+
+  "liveOpen": "Live transcription",
+  "liveRecordingHint": "The transcription appears in real time as you speak. Audio is not stored.",
+  "liveTranscriptTitle": "Live transcription",
+  "transcribing": "transcribing…",
+  "liveMicIdle": "Press “Start” to begin capturing.",
+  "livePaused": "Session paused.",
+  "liveStart": "Start transcription",
+  "livePause": "Pause",
+  "liveResume": "Resume",
+  "liveFinish": "Finish",
+  "liveStatusIdle": "Not started",
+  "liveStatusConnecting": "Connecting…",
+  "liveStatusListening": "Listening",
+  "liveStatusPaused": "Paused",
+  "liveStatusStopped": "Finished",
+  "liveStatusError": "Error"
 }

@@ -364,4 +364,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get evoPlanHint => 'Treatment changes and follow-up.';
+
+  @override
+  String get liveOpen => 'Live transcription';
+
+  @override
+  String get liveRecordingHint =>
+      'The transcription appears in real time as you speak. Audio is not stored.';
+
+  @override
+  String get liveTranscriptTitle => 'Live transcription';
+
+  @override
+  String get transcribing => 'transcribing…';
+
+  @override
+  String get liveMicIdle => 'Press “Start” to begin capturing.';
+
+  @override
+  String get livePaused => 'Session paused.';
+
+  @override
+  String get liveStart => 'Start transcription';
+
+  @override
+  String get livePause => 'Pause';
+
+  @override
+  String get liveResume => 'Resume';
+
+  @override
+  String get liveFinish => 'Finish';
+
+  @override
+  String get liveStatusIdle => 'Not started';
+
+  @override
+  String get liveStatusConnecting => 'Connecting…';
+
+  @override
+  String get liveStatusListening => 'Listening';
+
+  @override
+  String get liveStatusPaused => 'Paused';
+
+  @override
+  String get liveStatusStopped => 'Finished';
+
+  @override
+  String get liveStatusError => 'Error';
 }

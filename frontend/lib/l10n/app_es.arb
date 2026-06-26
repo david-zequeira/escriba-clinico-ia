@@ -120,5 +120,22 @@
   "evoJuicioLabel": "Juicio clínico (borrador)",
   "evoJuicioHint": "Impresión diagnóstica actual. Requiere validación del médico.",
   "evoPlanLabel": "Plan terapéutico y próximos pasos",
-  "evoPlanHint": "Cambios de tratamiento y seguimiento."
+  "evoPlanHint": "Cambios de tratamiento y seguimiento.",
+
+  "liveOpen": "Transcripción en vivo",
+  "liveRecordingHint": "La transcripción aparece en tiempo real mientras hablas. El audio no se guarda.",
+  "liveTranscriptTitle": "Transcripción en vivo",
+  "transcribing": "transcribiendo…",
+  "liveMicIdle": "Pulsa «Iniciar» para empezar a capturar.",
+  "livePaused": "Sesión en pausa.",
+  "liveStart": "Iniciar transcripción",
+  "livePause": "Pausar",
+  "liveResume": "Reanudar",
+  "liveFinish": "Finalizar",
+  "liveStatusIdle": "Sin iniciar",
+  "liveStatusConnecting": "Conectando…",
+  "liveStatusListening": "Escuchando",
+  "liveStatusPaused": "En pausa",
+  "liveStatusStopped": "Finalizada",
+  "liveStatusError": "Error"
 }
