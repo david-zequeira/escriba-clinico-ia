@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:escriba_clinico/features/consultation/data/datasources/consultation_remote_datasource.dart';
@@ -54,12 +55,15 @@ class ConsultationRepositoryImpl implements ConsultationRepository {
     final data = await _remote.fetchConsultation(consultationId);
     final draft = _draftFromJson(data['clinical_draft'] as Map<String, dynamic>);
 
-    // Evidencia (trazabilidad Clase I): si el backend la provee, se usa; si no
-    // —caso actual— se genera un mock determinista para construir/demostrar la UI.
+    // Trazabilidad (Clase I): se usa SIEMPRE la transcripción/evidencia real del
+    // backend de forma independiente. Solo si no hay NADA se fabrica un ejemplo,
+    // y únicamente en debug: jamás inventamos una conversación en release
+    // (anti-alucinación, ver CLAUDE.md §7).
     final transcript = _transcriptFromJson(data['transcript']);
     final evidence = _evidenceFromJson(data['evidence']);
-    final hasReal = transcript.isNotEmpty && evidence.isNotEmpty;
-    final mock = hasReal ? null : _mockEvidence(draft);
+    final demo = (kDebugMode && transcript.isEmpty && evidence.isEmpty)
+        ? _mockEvidence(draft)
+        : null;
 
     return Consultation(
       id: data['id'] as String,
@@ -68,8 +72,11 @@ class ConsultationRepositoryImpl implements ConsultationRepository {
       documentTitle: data['document_title'] as String,
       sectionLabels: Map<String, String>.from(data['section_labels'] as Map),
       draft: draft,
-      transcript: hasReal ? transcript : mock!.transcript,
-      evidenceBySection: hasReal ? evidence : mock!.evidence,
+      transcript: transcript.isNotEmpty
+          ? transcript
+          : (demo?.transcript ?? const Transcript()),
+      evidenceBySection:
+          evidence.isNotEmpty ? evidence : (demo?.evidence ?? const {}),
     );
   }
 
@@ -122,9 +129,9 @@ class ConsultationRepositoryImpl implements ConsultationRepository {
     return out;
   }
 
-  /// MOCK temporal (contrato F1): construye una conversación sintética a partir
-  /// del borrador y enlaza cada sección con su segmento. Se elimina en cuanto el
-  /// backend devuelva `transcript` + `evidence` reales.
+  /// DEMO (solo debug): construye una conversación sintética a partir del borrador
+  /// y enlaza cada sección con sus segmentos, para construir/probar la UI mientras
+  /// el backend no envía `transcript`/`evidence`. Nunca se usa en release.
   ({Transcript transcript, Map<String, List<int>> evidence}) _mockEvidence(
     ClinicalDraft draft,
   ) {

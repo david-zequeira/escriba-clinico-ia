@@ -60,5 +60,23 @@ void main() {
       expect(c.transcript.segments.first.speaker, Speaker.medico);
       expect(c.evidenceBySection['plan'], [1]);
     });
+
+    test('respeta la transcripción real aunque no haya evidencia (no fabrica)', () async {
+      final json = _baseJson(extra: {
+        'transcript': [
+          {'speaker': 'medico', 'text': 'Buenos días.'},
+          {'speaker': 'paciente', 'text': 'Hola, doctor.'},
+        ],
+      });
+      final repo = ConsultationRepositoryImpl(_FakeRemote(json));
+
+      final c = await repo.getConsultation('c-1');
+
+      // Se usa la transcripción real, no una fabricada a partir del borrador.
+      expect(c.transcript.segments.length, 2);
+      expect(c.transcript.segments.first.text, 'Buenos días.');
+      // Sin evidencia del backend, no se inventa.
+      expect(c.evidenceBySection, isEmpty);
+    });
   });
 }
