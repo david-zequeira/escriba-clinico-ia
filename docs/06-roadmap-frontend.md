@@ -53,11 +53,17 @@ batería de pruebas por feature y **hook `pre-push`** que corre analyze + tests.
 
 ## Fase F2 — Captura en vivo (streaming · front-led + WS backend)
 
-> **Estado: Slice 1 implementado (front-led, mock).** Pantalla de transcripción en
-> vivo (parciales + diarización) sobre `FakeTranscriptionStreamSource`, waveform con
-> **amplitud real** del micrófono y control **pausar/reanudar**. El contrato WebSocket
-> queda documentado en [`07-contrato-streaming.md`](07-contrato-streaming.md) para el
-> backend. Pendiente (Slice 2): borrador que se construye en vivo + endpoint WS real.
+> **Estado: Slice 1 + flujo unificado.** Captura en una **sola pantalla**
+> (`ConsultationCaptureScreen`): paciente + consentimiento → transcripción en vivo
+> (parciales + diarización) sobre el **WebSocket real** del backend, waveform con
+> **amplitud real** y **pausar/reanudar** → **Finalizar** genera el borrador y abre la
+> revisión. Sustituye a las pantallas separadas de grabación y de live. Contrato en
+> [`07-contrato-streaming.md`](07-contrato-streaming.md).
+>
+> **Interim:** al Finalizar se sube el audio capturado al pipeline batch para obtener
+> el borrador (re-procesado corto). **Pendiente (Slice 2):** que el backend genere el
+> borrador a partir del propio stream y elimine ese re-procesado; STT en streaming real
+> (Gladia Real-Time) en lugar del mock.
 
 **Objetivo:** reducir la espera y dar sensación de producto "en tiempo real".
 

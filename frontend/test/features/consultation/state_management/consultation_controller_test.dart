@@ -86,6 +86,41 @@ void main() {
     expect(repo.uploadedBytes, [1, 2, 3]);
   });
 
+  test('beginSession crea la consulta y deja la etapa en recording', () async {
+    controller().selectType(ConsultationType.admissionInterview);
+
+    final id = await controller().beginSession('12345678Z');
+
+    final state = container.read(consultationProvider);
+    expect(id, 'c-1');
+    expect(state.stage, ConsultationStage.recording);
+    expect(state.consultationId, 'c-1');
+    expect(state.patientId, '12345678Z');
+  });
+
+  test('beginSession + finalizeWithAudio completa el flujo unificado', () async {
+    controller().selectType(ConsultationType.admissionInterview);
+    await controller().beginSession('12345678Z');
+
+    await controller().finalizeWithAudio([9, 9], filename: 'live.wav');
+
+    final state = container.read(consultationProvider);
+    expect(state.stage, ConsultationStage.review);
+    expect(state.consultationId, 'c-1');
+    expect(state.patientId, '12345678Z');
+    expect(state.note!.sections['plan']!.content, 'ingreso');
+    expect(repo.uploadedBytes, [9, 9]);
+  });
+
+  test('finalizeWithAudio sin sesión iniciada no hace nada', () async {
+    controller().selectType(ConsultationType.admissionInterview);
+
+    await controller().finalizeWithAudio([1]);
+
+    expect(container.read(consultationProvider).stage, ConsultationStage.idle);
+    expect(repo.uploadedBytes, isNull);
+  });
+
   test('submitAudio propaga el error como estado de error', () async {
     repo.shouldFail = true;
     controller().selectType(ConsultationType.admissionInterview);

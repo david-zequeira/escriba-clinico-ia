@@ -841,6 +841,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error'**
   String get liveStatusError;
+
+  /// No description provided for @generatingDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating draft…'**
+  String get generatingDraft;
 }
 
 class _AppLocalizationsDelegate

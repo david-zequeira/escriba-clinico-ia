@@ -38,7 +38,7 @@ class _FakeAudio implements AudioRepository {
 
   @override
   Future<RecordedAudio> stop({required String tempPath}) async =>
-      RecordedAudio(bytes: Uint8List(0), filename: 'x.wav');
+      RecordedAudio(bytes: Uint8List.fromList([1, 2, 3]), filename: 'x.wav');
 
   @override
   Future<void> dispose() async => disposed = true;
@@ -141,6 +141,17 @@ void main() {
 
     expect(controller.state.status, LiveStatus.stopped);
     expect(audio.disposed, isTrue);
+    expect(transcription.closed, isTrue);
+  });
+
+  test('finishCapture conserva el audio y cierra el canal', () async {
+    await controller.start('c-1', tempPath: '/tmp/x.wav');
+
+    final recorded = await controller.finishCapture();
+
+    expect(recorded, isNotNull);
+    expect(recorded!.bytes, [1, 2, 3]);
+    expect(controller.state.status, LiveStatus.stopped);
     expect(transcription.closed, isTrue);
   });
 

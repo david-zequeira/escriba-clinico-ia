@@ -413,4 +413,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get liveStatusError => 'Error';
+
+  @override
+  String get generatingDraft => 'Generating draft…';
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:escriba_clinico/core/app_log.dart';
 import 'package:escriba_clinico/features/audio/data/repositories/audio_repository_impl.dart';
+import 'package:escriba_clinico/features/audio/domain/entities/recorded_audio.dart';
 import 'package:escriba_clinico/features/audio/domain/repositories/audio_repository.dart';
 import 'package:escriba_clinico/features/consultation/data/repositories/transcription_stream_repository_impl.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/transcript.dart';
@@ -66,11 +67,16 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
   final List<TranscriptSegment> _finalized = [];
   TranscriptSegment? _partial;
 
+  /// Ruta temporal de la grabación de la sesión actual; necesaria para recuperar
+  /// el audio en [finishCapture] y generar el borrador.
+  String? _tempPath;
+
   Future<void> start(String consultationId, {required String tempPath}) async {
     if (state.isActive) return;
     state = const LiveTranscriptionState(status: LiveStatus.connecting);
     _finalized.clear();
     _partial = null;
+    _tempPath = tempPath;
 
     devLog('F2.live', 'start consultation=$consultationId');
     try {
@@ -119,6 +125,30 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
     if (state.status == LiveStatus.idle) return;
     await _teardown();
     state = state.copyWith(status: LiveStatus.stopped, amplitude: 0);
+  }
+
+  /// Finaliza la captura CONSERVANDO el audio: cierra el stream y el micrófono
+  /// pero devuelve los bytes grabados para generar el borrador (a diferencia de
+  /// [stop], que descarta). Deja la sesión en `stopped`.
+  Future<RecordedAudio?> finishCapture() async {
+    if (state.status == LiveStatus.idle) return null;
+    await _amplitudeSub?.cancel();
+    _amplitudeSub = null;
+    await _eventsSub?.cancel();
+    _eventsSub = null;
+    await _transcription.close();
+
+    RecordedAudio? audio;
+    final path = _tempPath;
+    if (path != null) {
+      try {
+        audio = await _audio.stop(tempPath: path);
+      } catch (e) {
+        devLog('F2.live', 'no se pudo recuperar el audio al finalizar: $e');
+      }
+    }
+    state = state.copyWith(status: LiveStatus.stopped, amplitude: 0);
+    return audio;
   }
 
   void _onEvent(TranscriptionEvent event) {

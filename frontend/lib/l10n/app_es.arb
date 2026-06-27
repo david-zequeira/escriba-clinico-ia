@@ -137,5 +137,6 @@
   "liveStatusListening": "Escuchando",
   "liveStatusPaused": "En pausa",
   "liveStatusStopped": "Finalizada",
-  "liveStatusError": "Error"
+  "liveStatusError": "Error",
+  "generatingDraft": "Generando borrador…"
 }
