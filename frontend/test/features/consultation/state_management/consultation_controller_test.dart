@@ -112,6 +112,19 @@ void main() {
     expect(repo.uploadedBytes, [9, 9]);
   });
 
+  test('awaitDraftFromStream publica el borrador sin subir audio', () async {
+    controller().selectType(ConsultationType.admissionInterview);
+    await controller().beginSession('12345678Z');
+
+    await controller().awaitDraftFromStream();
+
+    final state = container.read(consultationProvider);
+    expect(state.stage, ConsultationStage.review);
+    expect(state.consultationId, 'c-1');
+    expect(state.note!.sections['plan']!.content, 'ingreso');
+    expect(repo.uploadedBytes, isNull); // el borrador vino del stream, sin re-subir
+  });
+
   test('finalizeWithAudio sin sesión iniciada no hace nada', () async {
     controller().selectType(ConsultationType.admissionInterview);
 

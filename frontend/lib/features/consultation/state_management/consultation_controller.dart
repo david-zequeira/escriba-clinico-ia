@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:escriba_clinico/features/consultation/data/repositories/consultation_repository_impl.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/clinical_draft.dart';
+import 'package:escriba_clinico/features/consultation/domain/entities/consultation.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/transcript.dart';
 import 'package:escriba_clinico/features/consultation/domain/repositories/consultation_repository.dart';
 import 'package:escriba_clinico/models/consultation_type.dart';
@@ -75,7 +76,7 @@ class ConsultationController extends StateNotifier<ConsultationState> {
   /// Devuelve el id, o `null` si falla (la etapa pasa a `error`).
   ///
   /// Es el primer paso del flujo unificado de captura: `beginSession` →
-  /// streaming en vivo → [finalizeWithAudio].
+  /// streaming en vivo → [awaitDraftFromStream].
   Future<String?> beginSession(String patientId) async {
     final type = state.consultationType;
     if (type == null) return null;
@@ -94,8 +95,28 @@ class ConsultationController extends StateNotifier<ConsultationState> {
     }
   }
 
-  /// Finaliza una sesión ya iniciada con [beginSession]: sube el audio capturado
-  /// a la consulta existente y trae el borrador → etapa `review`.
+  /// Finaliza el flujo unificado SIN re-subir audio: el backend ya generó el
+  /// borrador a partir de la transcripción del propio stream al cerrarse el
+  /// canal. Aquí solo se espera a que esté listo y se publica para revisión.
+  Future<void> awaitDraftFromStream() async {
+    final id = state.consultationId;
+    if (id == null) return;
+    final patientId = state.patientId ?? '';
+    state = state.copyWith(stage: ConsultationStage.processing, errorMessage: null);
+    try {
+      await _repo.waitForCompletion(id);
+      final result = await _repo.getConsultation(id);
+      _publishReview(result, patientId);
+    } catch (e) {
+      state = state.copyWith(
+        stage: ConsultationStage.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  /// Finaliza una sesión ya iniciada con [beginSession] subiendo el audio
+  /// capturado (camino de respaldo si el borrador-desde-stream no está disponible).
   Future<void> finalizeWithAudio(
     List<int> audioBytes, {
     String filename = 'consulta.m4a',
@@ -140,22 +161,27 @@ class ConsultationController extends StateNotifier<ConsultationState> {
       await _repo.uploadAudio(id, audioBytes, filename: filename);
       await _repo.waitForCompletion(id);
       final result = await _repo.getConsultation(id);
-      state = state.copyWith(
-        stage: ConsultationStage.review,
-        consultationId: result.id,
-        patientId: patientId,
-        documentTitle: result.documentTitle,
-        sectionLabels: result.sectionLabels,
-        note: result.draft,
-        transcript: result.transcript,
-        evidenceBySection: result.evidenceBySection,
-      );
+      _publishReview(result, patientId);
     } catch (e) {
       state = state.copyWith(
         stage: ConsultationStage.error,
         errorMessage: e.toString(),
       );
     }
+  }
+
+  /// Publica el borrador obtenido en la etapa `review`.
+  void _publishReview(Consultation result, String patientId) {
+    state = state.copyWith(
+      stage: ConsultationStage.review,
+      consultationId: result.id,
+      patientId: patientId,
+      documentTitle: result.documentTitle,
+      sectionLabels: result.sectionLabels,
+      note: result.draft,
+      transcript: result.transcript,
+      evidenceBySection: result.evidenceBySection,
+    );
   }
 
   void updateSectionContent(String key, String content) {

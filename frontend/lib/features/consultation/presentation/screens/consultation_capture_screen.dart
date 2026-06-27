@@ -117,21 +117,14 @@ class _ConsultationCaptureScreenState
     }
   }
 
-  /// Finaliza: detiene la captura conservando el audio y lo manda al pipeline
-  /// para generar el borrador. La navegación a revisión la dispara `ref.listen`.
+  /// Finaliza: cierra el micrófono y el canal. Al cerrarse el stream, el backend
+  /// genera el borrador a partir de la propia transcripción (sin re-subir audio);
+  /// aquí se espera a que esté listo. La navegación a revisión la dispara
+  /// `ref.listen`.
   Future<void> _finish() async {
-    final l = context.l10n;
-    final audio = await ref.read(liveTranscriptionProvider.notifier).finishCapture();
+    await ref.read(liveTranscriptionProvider.notifier).finishCapture();
     if (!mounted) return;
-    if (audio == null || audio.bytes.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(l.emptyRecording)));
-      return;
-    }
-    await ref.read(consultationProvider.notifier).finalizeWithAudio(
-          audio.bytes,
-          filename: audio.filename,
-        );
+    await ref.read(consultationProvider.notifier).awaitDraftFromStream();
   }
 
   @override

@@ -16,11 +16,15 @@ import contextlib
 import json
 import logging
 from collections import Counter
+from uuid import UUID
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.domain.ports import RealtimeTranscriptionSession
+from app.domain.streaming import FinalTranscript
+from app.domain.value_objects import Transcript, TranscriptSegment
 from app.infrastructure.providers.stt.realtime_factory import get_realtime_stt_provider
+from app.workers.tasks import run_draft_from_transcript_job
 
 # IMPORTANTE: este logger NUNCA emite el texto transcrito (PHI). Solo metadatos:
 # tipos de evento, conteos, bytes de audio y acciones de control (§7.8).
@@ -41,11 +45,23 @@ async def stream_transcription(websocket: WebSocket, consultation_id: str) -> No
 
     events_sent: Counter[str] = Counter()
     audio = {"chunks": 0, "bytes": 0}
+    # Transcripción consolidada de la sesión: con ella se genera el borrador al
+    # cerrar, sin volver a llamar al STT (F2 slice 2). No se loguea el texto (§7).
+    finals: list[TranscriptSegment] = []
 
     async def pump_events() -> None:
         """Eventos del STT → cliente. Loguea el tipo, nunca el texto."""
         with contextlib.suppress(WebSocketDisconnect, RuntimeError):
             async for event in session.events():
+                if isinstance(event, FinalTranscript):
+                    finals.append(
+                        TranscriptSegment(
+                            speaker=event.speaker,
+                            text=event.text,
+                            start_ms=event.start_ms,
+                            end_ms=event.end_ms,
+                        )
+                    )
                 frame = event.to_frame()
                 events_sent[str(frame["type"])] += 1
                 logger.debug("→ evento %s", frame["type"])
@@ -75,6 +91,12 @@ async def stream_transcription(websocket: WebSocket, consultation_id: str) -> No
             {events_task, client_task}, return_when=asyncio.FIRST_COMPLETED
         )
     finally:
+        # PRIMERO: programa la generación del borrador como tarea independiente,
+        # de forma síncrona y antes de cualquier `await`. Si se hiciera con
+        # `await` aquí, la desconexión del cliente cancelaría este handler y con
+        # él la generación a medias. Desacoplada (como la cola batch), sobrevive
+        # al cierre del WS.
+        _schedule_draft_from_stream(consultation_id, finals)
         for task in (events_task, client_task):
             task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -88,6 +110,40 @@ async def stream_transcription(websocket: WebSocket, consultation_id: str) -> No
             dict(events_sent),
             audio["chunks"],
             audio["bytes"],
+        )
+
+
+# Referencias fuertes a las tareas de borrador en vuelo (evita que el GC las
+# recoja antes de terminar), igual que AsyncioJobQueue.
+_draft_tasks: set[asyncio.Task] = set()
+
+
+def _schedule_draft_from_stream(
+    consultation_id: str, segments: list[TranscriptSegment]
+) -> None:
+    """Programa (best-effort) la generación del borrador con lo transcrito.
+
+    Solo aplica si la sesión enlazó una consulta real (id UUID existente). Para
+    ids de demo/no-UUID (p. ej. tests de contrato) no hay nada que completar.
+    """
+    if not segments:
+        return
+    try:
+        cid = UUID(consultation_id)
+    except ValueError:
+        return
+    transcript = Transcript(segments=segments)
+    task = asyncio.create_task(_safe_draft(cid, transcript))
+    _draft_tasks.add(task)
+    task.add_done_callback(_draft_tasks.discard)
+
+
+async def _safe_draft(consultation_id: UUID, transcript: Transcript) -> None:
+    try:
+        await run_draft_from_transcript_job(consultation_id, transcript)
+    except Exception:  # noqa: BLE001 - no romper nada por el borrador
+        logger.exception(
+            "No se pudo generar el borrador desde el stream %s", consultation_id
         )
 
 

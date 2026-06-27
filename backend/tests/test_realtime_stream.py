@@ -1,18 +1,43 @@
 """Tests del streaming de transcripción en vivo (F2): eventos, mock y endpoint WS."""
 from __future__ import annotations
 
+import time
+
 from starlette.testclient import TestClient
 
+from app.application.use_cases.draft_from_transcript import DraftFromTranscriptUseCase
+from app.domain.entities import Consultation
+from app.domain.enums import ConsultationStatus, ConsultationType
 from app.domain.streaming import (
     FinalTranscript,
     PartialTranscript,
     TranscriptionClosed,
 )
+from app.domain.value_objects import Transcript, TranscriptSegment
+from app.infrastructure.providers.llm.mock import MockLLMProvider
 from app.infrastructure.providers.stt.realtime_mock import (
     MockRealtimeSession,
     MockRealtimeSTTProvider,
 )
 from app.main import app
+
+
+class _InMemoryRepo:
+    """Repositorio en memoria para aislar el caso de uso de la BD."""
+
+    def __init__(self, consultation: Consultation) -> None:
+        self._store = {consultation.id: consultation}
+
+    async def add(self, consultation: Consultation) -> Consultation:
+        self._store[consultation.id] = consultation
+        return consultation
+
+    async def get(self, consultation_id):
+        return self._store.get(consultation_id)
+
+    async def update(self, consultation: Consultation) -> Consultation:
+        self._store[consultation.id] = consultation
+        return consultation
 
 
 def test_event_frames_match_contract():
@@ -75,3 +100,58 @@ def test_websocket_stream_devuelve_frames_del_contrato():
     assert frames[-1]["type"] == "closed"
     # Todos los frames respetan el discriminador del contrato.
     assert types <= {"partial", "final", "error", "closed"}
+
+
+async def test_draft_from_transcript_completa_la_consulta():
+    consultation = Consultation(
+        doctor_id="d-1",
+        patient_id="p-1",
+        consultation_type=ConsultationType.admission_interview,
+    )
+    repo = _InMemoryRepo(consultation)
+    transcript = Transcript(
+        segments=[TranscriptSegment(speaker="medico", text="Buenos días.")]
+    )
+
+    await DraftFromTranscriptUseCase(repo, MockLLMProvider()).execute(
+        consultation.id, transcript
+    )
+
+    assert consultation.status == ConsultationStatus.completed
+    assert consultation.clinical_draft is not None
+    assert consultation.transcript is not None
+
+
+async def test_draft_from_transcript_vacia_falla():
+    consultation = Consultation(doctor_id="d-1", patient_id="p-1")
+    repo = _InMemoryRepo(consultation)
+
+    await DraftFromTranscriptUseCase(repo, MockLLMProvider()).execute(
+        consultation.id, Transcript(segments=[])
+    )
+
+    assert consultation.status == ConsultationStatus.failed
+
+
+def test_websocket_stream_genera_borrador_desde_el_stream():
+    """De extremo a extremo: crear consulta → stream WS → borrador sin re-subir audio."""
+    with TestClient(app) as client:
+        created = client.post("/consultations", json={"patient_id": "p-stream"})
+        cid = created.json()["id"]
+
+        with client.websocket_connect(f"/consultations/{cid}/stream") as ws:
+            while ws.receive_json()["type"] != "closed":
+                pass
+
+        # El borrador se genera al cerrar el WS, a partir de la transcripción.
+        status = None
+        for _ in range(100):
+            status = client.get(f"/consultations/{cid}/status").json()["status"]
+            if status in ("completed", "failed"):
+                break
+            time.sleep(0.05)
+        assert status == "completed"
+
+        result = client.get(f"/consultations/{cid}").json()
+        assert result["clinical_draft"] is not None
+        assert result["transcript"] is not None
