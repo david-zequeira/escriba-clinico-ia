@@ -140,9 +140,12 @@ STT_API_KEY=<tu_clave_gladia>   # misma clave que el STT batch
 - Flujo: `POST https://api.gladia.io/v2/live` (config PCM 16k/16/mono) → `url` WS →
   el backend reenvía el audio del cliente y traduce los mensajes `transcript` a
   eventos del contrato (§3).
-- **Diarización:** en mono Gladia no separa interlocutores de forma fiable; los
-  segmentos llegan como `desconocido` (no se inventa, §7). La diarización
-  médico/paciente real requiere multicanal o post-proceso (pendiente).
+- **Diarización:** Gladia Live no separa interlocutores en mono (no hay parámetro
+  ni campo `speaker`; solo distingue por canal en estéreo/multicanal). Por eso el
+  live llega como `desconocido` y, al cerrar, el **LLM atribuye médico/paciente por
+  contenido** (`LLMProvider.assign_speakers`, en `DraftFromTranscriptUseCase`) antes
+  de estructurar la nota. Es heurístico (el médico revisa); ante la duda,
+  `desconocido` (no se inventa, §7). Multicanal real (dos micros) queda como mejora.
 - Sin `STT_API_KEY` el proveedor falla al construirse (es intencional). El **mock**
   sigue siendo el valor por defecto para desarrollo/CI.
 

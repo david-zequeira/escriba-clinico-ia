@@ -17,6 +17,17 @@ from app.domain.value_objects import ClinicalSection, Transcript
 class MockLLMProvider(LLMProvider):
     name = "mock-llm"
 
+    async def assign_speakers(
+        self,
+        texts: list[str],
+        consultation_type: ConsultationType = ConsultationType.admission_interview,
+    ) -> list[str]:
+        await asyncio.sleep(0)
+        if consultation_type != ConsultationType.admission_interview:
+            return ["medico"] * len(texts)
+        # Alternancia médico→paciente→… (el guion empieza con el médico).
+        return ["medico" if i % 2 == 0 else "paciente" for i in range(len(texts))]
+
     async def structure_note(
         self,
         transcript: Transcript,

@@ -17,7 +17,19 @@ from app.infrastructure.providers.llm.prompts import get_system_prompt
 from app.infrastructure.providers.llm.schemas import (
     AdmissionNoteDraft,
     EvolutionNoteDraft,
+    SpeakerLabelsDraft,
     TreatmentOrdersNoteDraft,
+)
+
+_VALID_SPEAKERS = {"medico", "paciente", "desconocido"}
+
+_SPEAKER_SYSTEM_PROMPT = (
+    "Eres un anotador clínico. Recibes las intervenciones de una consulta en orden. "
+    "Clasifica CADA intervención como 'medico' o 'paciente' según quién la diría: "
+    "el médico pregunta, explora, explica e indica; el paciente describe síntomas, "
+    "antecedentes y vivencias. No inventes: si una intervención es ambigua, usa "
+    "'desconocido'. Devuelve EXACTAMENTE una etiqueta por intervención, en el mismo "
+    "orden, sin texto adicional."
 )
 
 _DRAFT_SCHEMA: dict[ConsultationType, type] = {
@@ -63,6 +75,34 @@ class MistralLLMProvider(LLMProvider):
             raise RuntimeError("Mistral no devolvió un borrador estructurado")
 
         return _to_clinical_draft(draft, consultation_type, self._model)
+
+    async def assign_speakers(
+        self,
+        texts: list[str],
+        consultation_type: ConsultationType = ConsultationType.admission_interview,
+    ) -> list[str]:
+        if not texts:
+            return []
+        numbered = "\n".join(f"{i}: {text}" for i, text in enumerate(texts))
+        response = await self._client.chat.parse_async(
+            model=self._model,
+            messages=[
+                {"role": "system", "content": _SPEAKER_SYSTEM_PROMPT},
+                {"role": "user", "content": f"Intervenciones (índice: texto):\n{numbered}"},
+            ],
+            response_format=SpeakerLabelsDraft,
+            temperature=0.0,
+            max_tokens=1024,
+        )
+        parsed = response.choices[0].message.parsed
+        labels = parsed.speakers if parsed is not None else []
+        # Normaliza longitud y valores: nunca menos etiquetas que intervenciones,
+        # y cualquier valor inesperado → 'desconocido' (no se inventa interlocutor).
+        out: list[str] = []
+        for i in range(len(texts)):
+            value = labels[i].strip().lower() if i < len(labels) else "desconocido"
+            out.append(value if value in _VALID_SPEAKERS else "desconocido")
+        return out
 
 
 def _to_clinical_draft(

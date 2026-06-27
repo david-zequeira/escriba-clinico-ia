@@ -11,7 +11,7 @@ from uuid import UUID
 from app.core.audit import log_event
 from app.domain.exceptions import ConsultationNotFound
 from app.domain.ports import ConsultationRepository, LLMProvider
-from app.domain.value_objects import Transcript
+from app.domain.value_objects import Transcript, TranscriptSegment
 
 
 class DraftFromTranscriptUseCase:
@@ -29,6 +29,13 @@ class DraftFromTranscriptUseCase:
             # que el cliente no quede esperando indefinidamente.
             if not transcript.segments:
                 raise ValueError("La transcripción del stream está vacía")
+
+            # Diarización por LLM: el STT en streaming (mono) no separa
+            # interlocutores y los marca 'desconocido'. Si es el caso, pedimos al
+            # LLM que atribuya médico/paciente por contenido antes de estructurar.
+            transcript = await self._assign_speakers_if_needed(
+                transcript, consultation.consultation_type
+            )
 
             consultation.set_transcript(transcript)
             consultation.mark_processing_llm()
@@ -54,3 +61,25 @@ class DraftFromTranscriptUseCase:
                 str(consultation_id),
                 str(exc),
             )
+
+    async def _assign_speakers_if_needed(
+        self, transcript: Transcript, consultation_type
+    ) -> Transcript:
+        """Si todos los segmentos vienen sin interlocutor, atribuye con el LLM."""
+        segments = transcript.segments
+        if not all(s.speaker == "desconocido" for s in segments):
+            return transcript  # el STT ya diarizó (p. ej. multicanal)
+
+        labels = await self._llm.assign_speakers(
+            [s.text for s in segments], consultation_type
+        )
+        relabeled = [
+            TranscriptSegment(
+                speaker=labels[i] if i < len(labels) else "desconocido",
+                text=s.text,
+                start_ms=s.start_ms,
+                end_ms=s.end_ms,
+            )
+            for i, s in enumerate(segments)
+        ]
+        return Transcript(language=transcript.language, segments=relabeled)

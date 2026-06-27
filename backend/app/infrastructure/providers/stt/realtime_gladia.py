@@ -84,7 +84,7 @@ class GladiaRealtimeSession(RealtimeTranscriptionSession):
         if not text:
             return None
 
-        speaker = _map_speaker_live(utterance.get("channel"), self._type)
+        speaker = _map_speaker_live(utterance.get("channel"))
         start = utterance.get("start")
         start_ms = int(start * 1000) if start is not None else None
 
@@ -173,16 +173,11 @@ def _gladia_language(language: str) -> str:
     return language.split("-")[0].lower()
 
 
-def _map_speaker_live(channel: int | None, consultation_type: ConsultationType) -> str:
-    """Mapea el canal de Gladia a interlocutor. En mono no hay diarización fiable.
-
-    No se inventa interlocutor (anti-alucinación §7): si no hay canal claro, se
-    marca `desconocido`.
+def _map_speaker_live(channel: int | None) -> str:
+    """En streaming mono Gladia no diariza: todo llega por el canal 0, que NO
+    identifica al interlocutor. Se marca `desconocido` (anti-alucinación §7); la
+    atribución médico/paciente la hace después el LLM (`assign_speakers`). El
+    `channel` se conserva en la firma para un futuro soporte multicanal.
     """
-    if consultation_type != ConsultationType.admission_interview:
-        return "medico"
-    if channel is None:
-        return "desconocido"
-    if 0 <= channel < len(_SPEAKER_LABELS):
-        return _SPEAKER_LABELS[channel]
+    _ = channel
     return "desconocido"

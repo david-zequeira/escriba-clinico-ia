@@ -134,6 +134,37 @@ async def test_draft_from_transcript_vacia_falla():
     assert consultation.status == ConsultationStatus.failed
 
 
+async def test_mock_assign_speakers_alterna_medico_paciente():
+    labels = await MockLLMProvider().assign_speakers(
+        ["pregunta", "respuesta", "otra pregunta"],
+        ConsultationType.admission_interview,
+    )
+    assert labels == ["medico", "paciente", "medico"]
+
+
+async def test_draft_from_transcript_diariza_segmentos_desconocidos():
+    consultation = Consultation(
+        doctor_id="d-1",
+        patient_id="p-1",
+        consultation_type=ConsultationType.admission_interview,
+    )
+    repo = _InMemoryRepo(consultation)
+    transcript = Transcript(
+        segments=[
+            TranscriptSegment(speaker="desconocido", text="¿Qué le ocurre?"),
+            TranscriptSegment(speaker="desconocido", text="Me duele el pecho."),
+        ]
+    )
+
+    await DraftFromTranscriptUseCase(repo, MockLLMProvider()).execute(
+        consultation.id, transcript
+    )
+
+    speakers = [s.speaker for s in consultation.transcript.segments]
+    assert speakers == ["medico", "paciente"]
+    assert consultation.status == ConsultationStatus.completed
+
+
 def test_websocket_stream_genera_borrador_desde_el_stream():
     """De extremo a extremo: crear consulta → stream WS → borrador sin re-subir audio."""
     with TestClient(app) as client:
@@ -212,10 +243,12 @@ async def test_gladia_realtime_mapea_transcript_partial_y_final():
     events = [event async for event in session.events()]
 
     assert isinstance(events[0], PartialTranscript)
-    assert events[0].speaker == "medico"
+    # En mono Gladia no diariza: el live sale 'desconocido' (el LLM asigna luego).
+    assert events[0].speaker == "desconocido"
     assert events[0].text == "Buenos"
     assert events[0].start_ms == 100
     assert isinstance(events[1], FinalTranscript)
+    assert events[1].speaker == "desconocido"
     assert events[1].text == "Buenos días"
     assert events[1].end_ms == 1200
     assert isinstance(events[-1], TranscriptionClosed)

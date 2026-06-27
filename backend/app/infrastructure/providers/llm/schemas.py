@@ -30,3 +30,12 @@ class EvolutionNoteDraft(BaseModel):
     evolucion: ClinicalSection = Field(default_factory=ClinicalSection)
     juicio_clinico: ClinicalSection = Field(default_factory=ClinicalSection)
     plan: ClinicalSection = Field(default_factory=ClinicalSection)
+
+
+class SpeakerLabelsDraft(BaseModel):
+    """Una etiqueta de interlocutor por intervención, en el mismo orden recibido."""
+
+    speakers: list[str] = Field(
+        default_factory=list,
+        description="'medico' | 'paciente' | 'desconocido' por cada intervención.",
+    )
