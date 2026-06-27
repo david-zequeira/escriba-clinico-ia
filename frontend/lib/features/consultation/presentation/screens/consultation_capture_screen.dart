@@ -117,18 +117,40 @@ class _ConsultationCaptureScreenState
     }
   }
 
-  /// Finaliza: cierra el micrófono y el canal. Al cerrarse el stream, el backend
-  /// genera el borrador a partir de la propia transcripción (sin re-subir audio);
-  /// aquí se espera a que esté listo. La navegación a revisión la dispara
-  /// `ref.listen`.
+  /// Finaliza: cierra el micrófono y el canal. La recogida del borrador la
+  /// dispara el listener de estado de la sesión (igual que cuando el servidor
+  /// cierra el stream por su cuenta), así que aquí basta con cerrar.
   Future<void> _finish() async {
     await ref.read(liveTranscriptionProvider.notifier).finishCapture();
-    if (!mounted) return;
-    await ref.read(consultationProvider.notifier).awaitDraftFromStream();
+  }
+
+  /// La sesión en vivo ha terminado (por Finalizar o porque el servidor cerró el
+  /// stream): recoge el borrador que el backend generó desde la transcripción y
+  /// abre la revisión. Evita re-disparar si ya se está generando o mostrando.
+  void _onLiveStopped() {
+    final stage = ref.read(consultationProvider).stage;
+    if (stage == ConsultationStage.processing ||
+        stage == ConsultationStage.review) {
+      return;
+    }
+    ref.read(consultationProvider.notifier).awaitDraftFromStream();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Cuando la sesión en vivo pasa de activa a detenida (Finalizar o cierre del
+    // servidor, p. ej. fin de la conversación), recoge el borrador y abre revisión.
+    ref.listen<LiveStatus>(
+      liveTranscriptionProvider.select((s) => s.status),
+      (prev, next) {
+        final wasActive =
+            prev == LiveStatus.listening || prev == LiveStatus.paused;
+        if (wasActive && next == LiveStatus.stopped) {
+          _onLiveStopped();
+        }
+      },
+    );
+
     ref.listen<ConsultationState>(consultationProvider, (prev, next) {
       if (next.stage == ConsultationStage.review &&
           prev?.stage != ConsultationStage.review) {
