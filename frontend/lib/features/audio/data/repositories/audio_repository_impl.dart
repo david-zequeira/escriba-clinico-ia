@@ -30,6 +30,9 @@ class AudioRepositoryImpl implements AudioRepository {
       _source.amplitudeStream(interval: interval);
 
   @override
+  Stream<List<int>> audioChunks() => _source.audioChunks;
+
+  @override
   Future<RecordedAudio> stop({required String tempPath}) =>
       _source.stopRecording(tempPath: tempPath);
 

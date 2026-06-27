@@ -10,6 +10,9 @@ abstract class TranscriptionStreamRepository {
   /// El stream se cierra al llamar [close] o cuando el backend termina.
   Stream<TranscriptionEvent> connect(String consultationId);
 
+  /// Envía un chunk de audio del micrófono por el canal (STT en streaming real).
+  Future<void> sendAudio(List<int> bytes);
+
   /// Pausa la sesión: el backend deja de enviar segmentos hasta [resume].
   Future<void> pause();
 

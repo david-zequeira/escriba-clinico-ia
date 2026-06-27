@@ -45,6 +45,9 @@ class TranscriptionStreamRepositoryImpl implements TranscriptionStreamRepository
   }
 
   @override
+  Future<void> sendAudio(List<int> bytes) => _source.sendAudio(bytes);
+
+  @override
   Future<void> pause() => _source.pause();
 
   @override

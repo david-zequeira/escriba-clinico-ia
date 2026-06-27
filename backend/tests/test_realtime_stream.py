@@ -1,6 +1,7 @@
 """Tests del streaming de transcripción en vivo (F2): eventos, mock y endpoint WS."""
 from __future__ import annotations
 
+import json
 import time
 
 from starlette.testclient import TestClient
@@ -155,3 +156,85 @@ def test_websocket_stream_genera_borrador_desde_el_stream():
         result = client.get(f"/consultations/{cid}").json()
         assert result["clinical_draft"] is not None
         assert result["transcript"] is not None
+
+
+class _FakeGladiaWS:
+    """WebSocket falso de Gladia para testear el mapeo sin red ni clave."""
+
+    def __init__(self, messages: list[str]) -> None:
+        self._messages = list(messages)
+        self.sent: list = []
+        self.closed = False
+
+    def __aiter__(self):
+        return self._iter()
+
+    async def _iter(self):
+        for message in self._messages:
+            yield message
+
+    async def send(self, data) -> None:
+        self.sent.append(data)
+
+    async def close(self, code: int = 1000) -> None:
+        self.closed = True
+
+
+async def test_gladia_realtime_mapea_transcript_partial_y_final():
+    from app.infrastructure.providers.stt.realtime_gladia import GladiaRealtimeSession
+
+    messages = [
+        json.dumps({"type": "speech_start"}),  # se ignora
+        json.dumps({
+            "type": "transcript",
+            "data": {
+                "is_final": False,
+                "utterance": {"text": "Buenos", "start": 0.1, "channel": 0},
+            },
+        }),
+        json.dumps({
+            "type": "transcript",
+            "data": {
+                "is_final": True,
+                "utterance": {
+                    "text": "Buenos días",
+                    "start": 0.1,
+                    "end": 1.2,
+                    "channel": 0,
+                },
+            },
+        }),
+    ]
+    session = GladiaRealtimeSession(
+        _FakeGladiaWS(messages), ConsultationType.admission_interview
+    )
+
+    events = [event async for event in session.events()]
+
+    assert isinstance(events[0], PartialTranscript)
+    assert events[0].speaker == "medico"
+    assert events[0].text == "Buenos"
+    assert events[0].start_ms == 100
+    assert isinstance(events[1], FinalTranscript)
+    assert events[1].text == "Buenos días"
+    assert events[1].end_ms == 1200
+    assert isinstance(events[-1], TranscriptionClosed)
+
+
+async def test_gladia_realtime_push_pause_close():
+    from app.infrastructure.providers.stt.realtime_gladia import GladiaRealtimeSession
+
+    ws = _FakeGladiaWS([])
+    session = GladiaRealtimeSession(ws, ConsultationType.admission_interview)
+
+    await session.push_audio(b"\x00\x01")
+    assert ws.sent == [b"\x00\x01"]
+
+    await session.pause()
+    await session.push_audio(b"\x02")
+    assert ws.sent == [b"\x00\x01"]  # en pausa no se envía audio
+
+    await session.resume()
+    await session.close()
+    assert ws.closed is True
+    assert any(isinstance(s, str) and "stop_recording" in s for s in ws.sent)

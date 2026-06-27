@@ -63,6 +63,7 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
 
   StreamSubscription<TranscriptionEvent>? _eventsSub;
   StreamSubscription<double>? _amplitudeSub;
+  StreamSubscription<List<int>>? _audioChunksSub;
 
   final List<TranscriptSegment> _finalized = [];
   TranscriptSegment? _partial;
@@ -85,6 +86,12 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
       _amplitudeSub = _audio.amplitudeStream().listen(
             (level) => state = state.copyWith(amplitude: level),
             onError: (e) => devLog('F2.live', 'error amplitud: $e'),
+          );
+      // Reenvía el audio del micrófono por el canal para el STT en streaming
+      // real (con el mock no tiene efecto; el mock ignora el audio).
+      _audioChunksSub = _audio.audioChunks().listen(
+            (chunk) => _transcription.sendAudio(chunk),
+            onError: (e) => devLog('F2.live', 'error audio: $e'),
           );
       _eventsSub = _transcription.connect(consultationId).listen(
             _onEvent,
@@ -132,6 +139,8 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
   /// [stop], que descarta). Deja la sesión en `stopped`.
   Future<RecordedAudio?> finishCapture() async {
     if (state.status == LiveStatus.idle) return null;
+    await _audioChunksSub?.cancel();
+    _audioChunksSub = null;
     await _amplitudeSub?.cancel();
     _amplitudeSub = null;
     await _eventsSub?.cancel();
@@ -188,6 +197,8 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
   }
 
   Future<void> _teardown() async {
+    await _audioChunksSub?.cancel();
+    _audioChunksSub = null;
     await _amplitudeSub?.cancel();
     _amplitudeSub = null;
     await _eventsSub?.cancel();
@@ -200,6 +211,7 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
 
   @override
   void dispose() {
+    _audioChunksSub?.cancel();
     _amplitudeSub?.cancel();
     _eventsSub?.cancel();
     unawaited(_transcription.close());

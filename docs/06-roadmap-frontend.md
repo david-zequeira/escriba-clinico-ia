@@ -61,8 +61,11 @@ batería de pruebas por feature y **hook `pre-push`** que corre analyze + tests.
 > audio) y se abre la revisión. Sustituye a las pantallas separadas de grabación y de
 > live. Contrato en [`07-contrato-streaming.md`](07-contrato-streaming.md).
 >
-> **Pendiente:** STT en streaming **real** (Gladia Real-Time) en lugar del mock, y
-> enviar el audio del micrófono por el canal para alimentarlo.
+> **STT real (Gladia v2 Live):** implementado y config-gated
+> (`STT_REALTIME_PROVIDER=gladia` + `STT_API_KEY`, ver
+> [`07-contrato-streaming.md`](07-contrato-streaming.md) §8). El frontend ya envía el
+> audio del micrófono por el canal. **Pendiente:** diarización fiable en mono y
+> prueba end-to-end con clave real.
 
 **Objetivo:** reducir la espera y dar sensación de producto "en tiempo real".
 

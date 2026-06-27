@@ -32,13 +32,14 @@ WebSocket  ws(s)://<API_BASE_URL>/consultations/{consultation_id}/stream
 
 | Tipo | Formato | Significado |
 |------|---------|-------------|
-| audio | *frame binario* | Chunk PCM 16-bit, 16 kHz, mono (igual config que la captura actual). |
+| audio | *frame binario* | Chunk PCM 16-bit, 16 kHz, mono. **El cliente ya lo envía** desde el micrófono (plataformas de stream; hoy macOS). |
 | control | `{"type": "pause"}` | Pausa la sesión: el servidor deja de emitir segmentos. |
 | control | `{"type": "resume"}` | Reanuda tras una pausa. |
 | control | `{"type": "stop"}` | Cierre ordenado de la sesión. |
 
-> En el Slice 1 el frontend gestiona pausar/reanudar localmente y consume una fuente
-> *fake*; el envío de audio binario se cableará al integrar el backend real.
+> El frontend reenvía los chunks PCM del recorder por el canal
+> (`LiveTranscriptionController` → `TranscriptionStreamSource.sendAudio`). El mock
+> los ignora (emite un guion); el proveedor real (Gladia) los transcribe.
 
 ---
 
@@ -124,6 +125,27 @@ transcripción de la sesión.
 - El audio fluye en tránsito y se descarta; con borrador-desde-stream el audio **ni
   siquiera sale del dispositivo** al finalizar (mejor minimización aún).
 
-> Estado: v0.3 — endpoint WS + mock + **borrador desde el stream** (sin re-subida).
-> Pendiente: proveedor real (Gladia Real-Time) y envío del audio del micrófono por
-> el canal para alimentarlo.
+---
+
+## 8. Activar el STT real (Gladia v2 Live)
+
+Implementado en `app/infrastructure/providers/stt/realtime_gladia.py` tras la
+interfaz `RealtimeSTTProvider`. Para usarlo en lugar del mock, en `backend/.env`:
+
+```bash
+STT_REALTIME_PROVIDER=gladia
+STT_API_KEY=<tu_clave_gladia>   # misma clave que el STT batch
+```
+
+- Flujo: `POST https://api.gladia.io/v2/live` (config PCM 16k/16/mono) → `url` WS →
+  el backend reenvía el audio del cliente y traduce los mensajes `transcript` a
+  eventos del contrato (§3).
+- **Diarización:** en mono Gladia no separa interlocutores de forma fiable; los
+  segmentos llegan como `desconocido` (no se inventa, §7). La diarización
+  médico/paciente real requiere multicanal o post-proceso (pendiente).
+- Sin `STT_API_KEY` el proveedor falla al construirse (es intencional). El **mock**
+  sigue siendo el valor por defecto para desarrollo/CI.
+
+> Estado: v0.4 — endpoint WS + **borrador desde el stream** + **proveedor Gladia v2
+> Live** (config-gated) + envío del audio del micrófono por el canal. Pendiente:
+> diarización fiable en mono y probar end-to-end con clave real.

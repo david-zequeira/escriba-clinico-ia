@@ -22,6 +22,10 @@ abstract class AudioRepository {
   /// Alimenta el waveform en vivo con la energía real de la señal.
   Stream<double> amplitudeStream({Duration interval});
 
+  /// Chunks de audio PCM en vivo durante la captura, para el STT en streaming.
+  /// Solo emite en plataformas de stream (hoy macOS).
+  Stream<List<int>> audioChunks();
+
   /// Detiene y devuelve el audio capturado.
   Future<RecordedAudio> stop({required String tempPath});
 

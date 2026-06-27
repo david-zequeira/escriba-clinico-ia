@@ -14,5 +14,12 @@ def get_realtime_stt_provider() -> RealtimeSTTProvider:
     provider = settings.STT_REALTIME_PROVIDER.lower()
     if provider == "mock":
         return MockRealtimeSTTProvider()
-    # TODO(F2): registrar gladia | speechmatics realtime cuando se implementen.
+    if provider == "gladia":
+        # Import perezoso: solo carga websockets/httpx y valida la clave si se usa.
+        from app.infrastructure.providers.stt.realtime_gladia import (
+            GladiaRealtimeSTTProvider,
+        )
+
+        return GladiaRealtimeSTTProvider()
+    # TODO(F2): speechmatics realtime cuando se implemente.
     raise ValueError(f"Proveedor STT realtime no soportado: {provider}")
