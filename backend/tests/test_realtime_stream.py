@@ -271,3 +271,66 @@ async def test_gladia_realtime_push_pause_close():
     await session.close()
     assert ws.closed is True
     assert any(isinstance(s, str) and "stop_recording" in s for s in ws.sent)
+
+
+async def test_speechmatics_realtime_mapea_y_diariza():
+    from app.infrastructure.providers.stt.realtime_speechmatics import (
+        SpeechmaticsRealtimeSession,
+    )
+
+    messages = [
+        json.dumps({
+            "message": "AddPartialTranscript",
+            "metadata": {"start_time": 0.1, "end_time": 0.4},
+            "transcript": "Buenos",
+            "results": [{"alternatives": [{"content": "Buenos", "speaker": "S1"}]}],
+        }),
+        json.dumps({
+            "message": "AddTranscript",
+            "metadata": {"start_time": 0.1, "end_time": 1.2},
+            "transcript": "Buenos días",
+            "results": [{"alternatives": [{"content": "Buenos", "speaker": "S1"}]}],
+        }),
+        json.dumps({
+            "message": "AddTranscript",
+            "metadata": {"start_time": 1.3, "end_time": 2.5},
+            "transcript": "Me duele el pecho",
+            "results": [{"alternatives": [{"content": "Me", "speaker": "S2"}]}],
+        }),
+        json.dumps({"message": "EndOfTranscript"}),
+    ]
+    session = SpeechmaticsRealtimeSession(
+        _FakeGladiaWS(messages), ConsultationType.admission_interview
+    )
+
+    events = [event async for event in session.events()]
+
+    assert isinstance(events[0], PartialTranscript)
+    assert events[0].speaker == "medico"  # S1 = primer interlocutor → médico
+    assert events[0].text == "Buenos"
+    assert isinstance(events[1], FinalTranscript)
+    assert events[1].speaker == "medico"
+    assert events[1].end_ms == 1200
+    assert isinstance(events[2], FinalTranscript)
+    assert events[2].speaker == "paciente"  # S2 = segundo interlocutor → paciente
+    assert events[2].text == "Me duele el pecho"
+    assert isinstance(events[-1], TranscriptionClosed)
+
+
+async def test_speechmatics_realtime_endofstream_con_seq():
+    from app.infrastructure.providers.stt.realtime_speechmatics import (
+        SpeechmaticsRealtimeSession,
+    )
+
+    ws = _FakeGladiaWS([])
+    session = SpeechmaticsRealtimeSession(ws, ConsultationType.admission_interview)
+
+    await session.push_audio(b"\x00\x01")
+    await session.push_audio(b"\x02\x03")
+    assert ws.sent == [b"\x00\x01", b"\x02\x03"]
+
+    await session.close()
+    assert ws.closed is True
+    end = [json.loads(s) for s in ws.sent if isinstance(s, str)]
+    assert end and end[-1]["message"] == "EndOfStream"
+    assert end[-1]["last_seq_no"] == 2

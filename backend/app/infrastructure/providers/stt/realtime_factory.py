@@ -21,5 +21,10 @@ def get_realtime_stt_provider() -> RealtimeSTTProvider:
         )
 
         return GladiaRealtimeSTTProvider()
-    # TODO(F2): speechmatics realtime cuando se implemente.
+    if provider == "speechmatics":
+        from app.infrastructure.providers.stt.realtime_speechmatics import (
+            SpeechmaticsRealtimeSTTProvider,
+        )
+
+        return SpeechmaticsRealtimeSTTProvider()
     raise ValueError(f"Proveedor STT realtime no soportado: {provider}")

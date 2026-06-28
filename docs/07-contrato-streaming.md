@@ -149,6 +149,33 @@ STT_API_KEY=<tu_clave_gladia>   # misma clave que el STT batch
 - Sin `STT_API_KEY` el proveedor falla al construirse (es intencional). El **mock**
   sigue siendo el valor por defecto para desarrollo/CI.
 
-> Estado: v0.4 — endpoint WS + **borrador desde el stream** + **proveedor Gladia v2
-> Live** (config-gated) + envío del audio del micrófono por el canal. Pendiente:
-> diarización fiable en mono y probar end-to-end con clave real.
+---
+
+## 9. Activar Speechmatics Real-Time (modelo médico, recomendado)
+
+Implementado en `app/infrastructure/providers/stt/realtime_speechmatics.py`. Es el
+proveedor recomendado para sanidad: **modelo médico en español**, **diarización en
+tiempo real** (separa interlocutores de verdad, sin heurística), safeguards
+anti-alucinación nativos y **endpoint UE** (`wss://eu.rt.speechmatics.com/v2`).
+
+En `backend/.env`:
+
+```bash
+STT_REALTIME_PROVIDER=speechmatics
+SPEECHMATICS_API_KEY=<tu_clave_speechmatics>
+# opcionales (con buenos defaults): SPEECHMATICS_DOMAIN=medical,
+# SPEECHMATICS_OPERATING_POINT=enhanced, SPEECHMATICS_MAX_DELAY=2.0
+```
+
+- Protocolo: `StartRecognition` (PCM 16-bit/16 kHz/mono, `domain: medical`,
+  `diarization: speaker`) → `RecognitionStarted` → audio binario → `AddTranscript`
+  con `speaker` (S1/S2…) → `EndOfStream`.
+- **Diarización:** Speechmatics separa interlocutores de forma fiable; asignamos el
+  rol por orden de aparición (primer hablante → médico, segundo → paciente). Como
+  ya viene diarizado, NO se usa el `assign_speakers` del LLM. El médico revisa.
+- Sin `SPEECHMATICS_API_KEY` el proveedor falla al construirse (intencional).
+
+> Estado: v0.5 — endpoint WS + **borrador desde el stream** + proveedores
+> **Gladia** y **Speechmatics** (config-gated) + audio del micro por el canal +
+> diarización (Speechmatics nativa / LLM como respaldo). Recomendado para producción:
+> Speechmatics médico, idealmente en su **contenedor on-prem** en infra UE.
