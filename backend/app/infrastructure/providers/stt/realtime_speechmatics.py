@@ -43,10 +43,21 @@ class SpeechmaticsRealtimeSession(RealtimeTranscriptionSession):
         self._paused = False
         self._closed = False
         self._audio_seq = 0
-        # Diarización real de Speechmatics: ids estables S1/S2… El rol (médico/
-        # paciente) se asigna por orden de aparición (el médico suele abrir). El
-        # médico revisa; si se invierte, lo corrige.
-        self._roles: dict[str, str] = {}
+        # Diarización real de Speechmatics: ids estables S1/S2… Guardamos el orden
+        # de aparición de cada hablante. El rol (médico/paciente) solo se infiere
+        # cuando hay ≥2 voces distintas; con una sola voz no se adivina (queda
+        # 'desconocido') para no etiquetar de "Médico" lo que aún no se sabe.
+        # En cualquier caso, el LLM reatribuye los roles por contenido al generar
+        # el borrador; esto es solo una previsualización en vivo.
+        self._speaker_order: dict[str, int] = {}
+        # Speechmatics entrega los finales palabra a palabra. Para no fragmentar
+        # la transcripción (una tarjeta por palabra) acumulamos por frase y solo
+        # emitimos un FinalTranscript al cerrar la frase (`is_eos`) o al cambiar
+        # de interlocutor. Mejora también la diarización por LLM en el borrador.
+        self._buf_text: str = ""
+        self._buf_speaker: str | None = None
+        self._buf_start_ms: int | None = None
+        self._buf_end_ms: int | None = None
 
     async def events(self) -> AsyncIterator[TranscriptionEvent]:
         try:
@@ -56,14 +67,16 @@ class SpeechmaticsRealtimeSession(RealtimeTranscriptionSession):
                 msg = json.loads(raw)
                 message = msg.get("message")
                 if message == "AddPartialTranscript":
-                    event = self._segment(msg, final=False)
+                    event = self._on_partial(msg)
                     if event is not None:
                         yield event
                 elif message == "AddTranscript":
-                    event = self._segment(msg, final=True)
-                    if event is not None:
+                    for event in self._on_final(msg):
                         yield event
                 elif message == "EndOfTranscript":
+                    flushed = self._flush_buffer()
+                    if flushed is not None:
+                        yield flushed
                     break
                 elif message == "Error":
                     yield TranscriptionStreamError(
@@ -75,24 +88,78 @@ class SpeechmaticsRealtimeSession(RealtimeTranscriptionSession):
             pass
         except Exception as exc:  # noqa: BLE001 - reportar como error de transcripción
             yield TranscriptionStreamError(message=f"Speechmatics live: {exc}")
+        flushed = self._flush_buffer()
+        if flushed is not None:
+            yield flushed
         if not self._closed:
             yield TranscriptionClosed()
 
-    def _segment(self, msg: dict, *, final: bool) -> TranscriptionEvent | None:
-        text = (msg.get("transcript") or "").strip()
-        if not text:
-            return None
+    def _on_final(self, msg: dict) -> list[TranscriptionEvent]:
+        """Acumula el delta finalizado; emite la frase al cerrarse o al cambiar
+        de interlocutor (puede producir 0, 1 o 2 eventos)."""
         metadata = msg.get("metadata") or {}
-        start = metadata.get("start_time")
-        start_ms = int(start * 1000) if start is not None else None
+        delta = metadata.get("transcript") or ""
+        if not delta.strip():
+            return []
         speaker = self._role(self._first_speaker(msg))
-        if final:
-            end = metadata.get("end_time")
-            end_ms = int(end * 1000) if end is not None else None
-            return FinalTranscript(
-                speaker=speaker, text=text, start_ms=start_ms, end_ms=end_ms
-            )
-        return PartialTranscript(speaker=speaker, text=text, start_ms=start_ms)
+        events: list[TranscriptionEvent] = []
+        # Cambio de interlocutor → cerrar la frase anterior antes de seguir.
+        if self._buf_text and speaker != self._buf_speaker:
+            flushed = self._flush_buffer()
+            if flushed is not None:
+                events.append(flushed)
+        if not self._buf_text:
+            self._buf_speaker = speaker
+            start = metadata.get("start_time")
+            self._buf_start_ms = int(start * 1000) if start is not None else None
+        self._buf_text = self._buf_text + delta if self._buf_text else delta
+        end = metadata.get("end_time")
+        self._buf_end_ms = int(end * 1000) if end is not None else self._buf_end_ms
+        if self._is_eos(msg):
+            flushed = self._flush_buffer()
+            if flushed is not None:
+                events.append(flushed)
+        return events
+
+    def _on_partial(self, msg: dict) -> TranscriptionEvent | None:
+        """Texto vivo de la frase en curso: lo ya consolidado + el parcial."""
+        metadata = msg.get("metadata") or {}
+        delta = (metadata.get("transcript") or "").strip()
+        live = (self._buf_text + " " + delta).strip() if self._buf_text else delta
+        if not live:
+            return None
+        speaker = self._buf_speaker or self._role(self._first_speaker(msg))
+        start_ms = self._buf_start_ms
+        if start_ms is None:
+            start = metadata.get("start_time")
+            start_ms = int(start * 1000) if start is not None else None
+        return PartialTranscript(speaker=speaker, text=live, start_ms=start_ms)
+
+    def _flush_buffer(self) -> TranscriptionEvent | None:
+        """Vuelca la frase acumulada como FinalTranscript y limpia el buffer."""
+        text = self._buf_text.strip()
+        if not text:
+            self._buf_text = ""
+            return None
+        event = FinalTranscript(
+            speaker=self._buf_speaker or "desconocido",
+            text=text,
+            start_ms=self._buf_start_ms,
+            end_ms=self._buf_end_ms,
+        )
+        self._buf_text = ""
+        self._buf_speaker = None
+        self._buf_start_ms = None
+        self._buf_end_ms = None
+        return event
+
+    @staticmethod
+    def _is_eos(msg: dict) -> bool:
+        """True si el mensaje cierra una frase (puntuación con `is_eos`)."""
+        for result in msg.get("results") or []:
+            if result.get("is_eos"):
+                return True
+        return False
 
     def _first_speaker(self, msg: dict) -> str | None:
         for result in msg.get("results") or []:
@@ -106,12 +173,15 @@ class SpeechmaticsRealtimeSession(RealtimeTranscriptionSession):
             return "medico"
         if not speaker_id:
             return "desconocido"
-        if speaker_id not in self._roles:
-            order = len(self._roles)
-            self._roles[speaker_id] = (
-                "medico" if order == 0 else "paciente" if order == 1 else "desconocido"
-            )
-        return self._roles[speaker_id]
+        if speaker_id not in self._speaker_order:
+            self._speaker_order[speaker_id] = len(self._speaker_order)
+        # Con una sola voz no se puede distinguir médico de paciente: 'desconocido'
+        # (la UI lo muestra neutro). Solo al aparecer un 2.º interlocutor inferimos
+        # el rol por orden (el médico suele abrir); el médico lo corrige si procede.
+        if len(self._speaker_order) < 2:
+            return "desconocido"
+        order = self._speaker_order[speaker_id]
+        return "medico" if order == 0 else "paciente" if order == 1 else "desconocido"
 
     async def push_audio(self, chunk: bytes) -> None:
         if self._paused or self._closed:

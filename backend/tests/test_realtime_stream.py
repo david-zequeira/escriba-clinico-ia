@@ -273,29 +273,28 @@ async def test_gladia_realtime_push_pause_close():
     assert any(isinstance(s, str) and "stop_recording" in s for s in ws.sent)
 
 
-async def test_speechmatics_realtime_mapea_y_diariza():
+async def test_speechmatics_extrae_texto_de_metadata_y_agrupa_por_frase():
+    """El texto viene en `metadata.transcript` (no en el nivel superior del
+    mensaje) y los finales palabra a palabra se agrupan en una sola frase hasta
+    el cierre de oración (`is_eos`)."""
     from app.infrastructure.providers.stt.realtime_speechmatics import (
         SpeechmaticsRealtimeSession,
     )
 
     messages = [
         json.dumps({
-            "message": "AddPartialTranscript",
-            "metadata": {"start_time": 0.1, "end_time": 0.4},
-            "transcript": "Buenos",
-            "results": [{"alternatives": [{"content": "Buenos", "speaker": "S1"}]}],
+            "message": "AddTranscript",
+            "metadata": {"start_time": 0.1, "end_time": 0.6, "transcript": "Me duele "},
+            "results": [{"alternatives": [{"content": "Me", "speaker": "S1"}]}],
         }),
         json.dumps({
             "message": "AddTranscript",
-            "metadata": {"start_time": 0.1, "end_time": 1.2},
-            "transcript": "Buenos días",
-            "results": [{"alternatives": [{"content": "Buenos", "speaker": "S1"}]}],
-        }),
-        json.dumps({
-            "message": "AddTranscript",
-            "metadata": {"start_time": 1.3, "end_time": 2.5},
-            "transcript": "Me duele el pecho",
-            "results": [{"alternatives": [{"content": "Me", "speaker": "S2"}]}],
+            "metadata": {"start_time": 0.6, "end_time": 1.4, "transcript": "la cabeza."},
+            "results": [
+                {"alternatives": [{"content": "cabeza", "speaker": "S1"}]},
+                {"type": "punctuation", "is_eos": True,
+                 "alternatives": [{"content": ".", "speaker": "S1"}]},
+            ],
         }),
         json.dumps({"message": "EndOfTranscript"}),
     ]
@@ -304,17 +303,51 @@ async def test_speechmatics_realtime_mapea_y_diariza():
     )
 
     events = [event async for event in session.events()]
+    finals = [e for e in events if isinstance(e, FinalTranscript)]
 
-    assert isinstance(events[0], PartialTranscript)
-    assert events[0].speaker == "medico"  # S1 = primer interlocutor → médico
-    assert events[0].text == "Buenos"
-    assert isinstance(events[1], FinalTranscript)
-    assert events[1].speaker == "medico"
-    assert events[1].end_ms == 1200
-    assert isinstance(events[2], FinalTranscript)
-    assert events[2].speaker == "paciente"  # S2 = segundo interlocutor → paciente
-    assert events[2].text == "Me duele el pecho"
+    assert len(finals) == 1  # las dos partes se agrupan en una frase
+    assert finals[0].text == "Me duele la cabeza."
+    assert finals[0].speaker == "desconocido"  # una sola voz: no se adivina el rol
+    assert finals[0].end_ms == 1400
     assert isinstance(events[-1], TranscriptionClosed)
+
+
+def _sm_final(transcript: str, speaker: str) -> str:
+    """Mensaje AddTranscript de Speechmatics con una frase cerrada (`is_eos`)."""
+    return json.dumps({
+        "message": "AddTranscript",
+        "metadata": {"start_time": 0.0, "end_time": 1.0, "transcript": transcript},
+        "results": [
+            {"alternatives": [{"content": transcript.split()[0], "speaker": speaker}]},
+            {"type": "punctuation", "is_eos": True,
+             "alternatives": [{"content": ".", "speaker": speaker}]},
+        ],
+    })
+
+
+async def test_speechmatics_diariza_medico_paciente_solo_con_dos_voces():
+    """Con una sola voz el rol es 'desconocido' (no se inventa "médico"); al
+    aparecer un 2.º interlocutor se infiere médico/paciente por orden."""
+    from app.infrastructure.providers.stt.realtime_speechmatics import (
+        SpeechmaticsRealtimeSession,
+    )
+
+    messages = [
+        _sm_final("Hola.", "S1"),
+        _sm_final("Hola, doctor.", "S2"),
+        _sm_final("Cuénteme.", "S1"),
+        json.dumps({"message": "EndOfTranscript"}),
+    ]
+    session = SpeechmaticsRealtimeSession(
+        _FakeGladiaWS(messages), ConsultationType.admission_interview
+    )
+
+    finals = [e async for e in session.events() if isinstance(e, FinalTranscript)]
+
+    assert finals[0].speaker == "desconocido"  # solo se ha oído a S1
+    assert finals[1].speaker == "paciente"  # aparece S2 (2.º interlocutor)
+    assert finals[2].speaker == "medico"  # S1 (1.º) ya con dos voces → médico
+    assert [f.text for f in finals] == ["Hola.", "Hola, doctor.", "Cuénteme."]
 
 
 async def test_speechmatics_realtime_endofstream_con_seq():
