@@ -9,6 +9,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from app.core.audit import log_event
+from app.domain.enums import ConsultationType
 from app.domain.exceptions import ConsultationNotFound
 from app.domain.ports import ConsultationRepository, LLMProvider
 from app.domain.value_objects import Transcript, TranscriptSegment
@@ -63,12 +64,27 @@ class DraftFromTranscriptUseCase:
             )
 
     async def _assign_speakers_if_needed(
-        self, transcript: Transcript, consultation_type
+        self, transcript: Transcript, consultation_type: ConsultationType
     ) -> Transcript:
-        """Si todos los segmentos vienen sin interlocutor, atribuye con el LLM."""
+        """Atribuye médico/paciente con el LLM cuando el STT no separó a los dos
+        interlocutores.
+
+        Solo aplica a la entrevista de ingreso (el dictado es monólogo). Si el STT
+        ya distinguió ≥2 hablantes (multicanal o diarización acústica real) se
+        respeta; el médico corrige en la revisión si quedaron invertidos. Pero si
+        todo cayó en un único interlocutor (mono sin diarización, o una sola voz),
+        pedimos al LLM que los atribuya por contenido.
+        """
         segments = transcript.segments
-        if not all(s.speaker == "desconocido" for s in segments):
-            return transcript  # el STT ya diarizó (p. ej. multicanal)
+        if consultation_type != ConsultationType.admission_interview:
+            return transcript
+        real_roles = {s.speaker for s in segments} - {"desconocido"}
+        has_unknown = any(s.speaker == "desconocido" for s in segments)
+        # El STT separó limpiamente solo si distinguió a médico y paciente sin
+        # dejar ningún segmento sin identificar. En cualquier otro caso (una sola
+        # voz, segmentos neutros de la previsualización en vivo…) el LLM atribuye.
+        if len(real_roles) >= 2 and not has_unknown:
+            return transcript
 
         labels = await self._llm.assign_speakers(
             [s.text for s in segments], consultation_type

@@ -24,12 +24,22 @@ from app.infrastructure.providers.llm.schemas import (
 _VALID_SPEAKERS = {"medico", "paciente", "desconocido"}
 
 _SPEAKER_SYSTEM_PROMPT = (
-    "Eres un anotador clínico. Recibes las intervenciones de una consulta en orden. "
-    "Clasifica CADA intervención como 'medico' o 'paciente' según quién la diría: "
-    "el médico pregunta, explora, explica e indica; el paciente describe síntomas, "
-    "antecedentes y vivencias. No inventes: si una intervención es ambigua, usa "
-    "'desconocido'. Devuelve EXACTAMENTE una etiqueta por intervención, en el mismo "
-    "orden, sin texto adicional."
+    "Eres un anotador clínico. Recibes, en orden, las intervenciones de una "
+    "consulta entre un médico y un paciente. Clasifica CADA intervención como "
+    "'medico' o 'paciente' razonando por su CONTENIDO y el contexto de la "
+    "conversación, NO por alternancia estricta: un mismo interlocutor puede hablar "
+    "en varios turnos seguidos.\n"
+    "Pistas:\n"
+    "- El médico pregunta por síntomas, explora, explica, indica pruebas o "
+    "tratamiento, y suele tratar de 'usted' al paciente.\n"
+    "- El paciente describe sus síntomas, antecedentes y vivencias en primera "
+    "persona.\n"
+    "- Si quien habla SE DIRIGE al otro como 'doctor', 'doctora' o 'médico' "
+    "(p. ej. '¿qué tal, doctor?'), esa intervención es del PACIENTE.\n"
+    "- Los saludos y aperturas suelen ser del médico, pero decide por el contenido.\n"
+    "Si una intervención es genuinamente ambigua, usa 'desconocido'; no inventes. "
+    "Devuelve EXACTAMENTE una etiqueta por intervención, en el mismo orden, sin "
+    "texto adicional."
 )
 
 _DRAFT_SCHEMA: dict[ConsultationType, type] = {

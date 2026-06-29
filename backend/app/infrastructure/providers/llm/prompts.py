@@ -5,20 +5,36 @@ from app.domain.document_templates import section_labels
 from app.domain.enums import ConsultationType
 
 _BASE_RULES = (
-    "Tu tarea es EXTRAER y RESUMIR en cada campo lo que realmente se dijo en la "
-    "transcripción, redactado en español clínico, en tercera persona y con el estilo "
-    "habitual de un hospital de la Unión Europea. Resumir o parafrasear lo que aparece "
-    "en la transcripción NO es inventar: es justo lo que debes hacer. Reglas: "
-    "(1) Rellena cada campo con la información relevante que se haya mencionado; usa "
-    "la sección que mejor corresponda a cada dato. "
-    "(2) Deja el contenido vacío ('') SOLO si en la transcripción no se dijo nada que "
-    "encaje en esa sección; no fuerces texto donde no hay información. "
-    "(3) NO añadas datos que no aparezcan (diagnósticos, dosis, antecedentes o "
-    "exploraciones no mencionados). "
+    "Tu tarea es EXTRAER y RESUMIR en cada campo ÚNICAMENTE lo que se dijo de forma "
+    "explícita en la transcripción, redactado en español clínico, en tercera persona "
+    "y con el estilo habitual de un hospital de la Unión Europea. Reformular o "
+    "resumir lo dicho está bien; AÑADIR, INFERIR o COMPLETAR información no dicha NO. "
+    "Reglas ESTRICTAS (anti-alucinación, no negociables): "
+    "(1) Usa solo datos verbalizados. Cíñete a lo dicho: NO añadas matices ni "
+    "interpretaciones que el interlocutor no haya expresado —p. ej. gravedad o "
+    "cualidades ('leve', 'intenso'), duración o evolución no dichas, etiquetas como "
+    "'inespecífico' o 'empírico', o interpretaciones como 'automedicación'. Si el "
+    "paciente dijo 'me duele un poco la cabeza', escribe eso, no 'cefalea leve'. "
+    "(2) Si en la transcripción no se dijo nada que encaje en una sección, deja su "
+    "contenido EXACTAMENTE vacío (''). NUNCA narres ausencias ni lo que NO se dijo "
+    "(prohibido escribir 'no se refieren alergias', 'no se aportan más detalles', "
+    "'sin antecedentes conocidos', etc.): si no se dijo, el campo va vacío. "
+    "(3) NO inventes diagnósticos, dosis, antecedentes, exploraciones ni pruebas. "
     "(4) Marca needs_confirmation=true cuando un dato sea ambiguo, dudoso, incompleto "
     "o no esté verbalizado con claridad. "
     "(5) No tomas decisiones diagnósticas ni terapéuticas autónomas: redactas un "
     "borrador administrativo que el médico revisará y validará."
+)
+
+_EXAMPLE = (
+    "Ejemplo (incorrecto vs. correcto):\n"
+    "Transcripción: 'paciente: me duele un poco la cabeza. médico: ¿algo más?'.\n"
+    "INCORRECTO — inventa matices y narra ausencias: "
+    "enfermedad_actual='Cefalea leve de carácter inespecífico.'; "
+    "antecedentes='No se refieren alergias ni medicación habitual.'\n"
+    "CORRECTO — solo lo dicho, sin ausencias: "
+    "enfermedad_actual='El paciente refiere dolor de cabeza.'; "
+    "antecedentes='' (vacío, porque no se mencionó ningún antecedente)."
 )
 
 _TYPE_INTROS: dict[ConsultationType, str] = {
@@ -49,5 +65,6 @@ def get_system_prompt(consultation_type: ConsultationType) -> str:
         f"Eres un asistente de documentación clínica (producto de apoyo administrativo, Clase I). "
         f"{intro} "
         f"Rellena el JSON con exactamente estos campos: {sections_desc}. "
-        f"{_BASE_RULES}"
+        f"{_BASE_RULES} "
+        f"{_EXAMPLE}"
     )
