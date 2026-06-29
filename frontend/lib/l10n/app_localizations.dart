@@ -419,7 +419,7 @@ abstract class AppLocalizations {
   /// No description provided for @speakerUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Unknown'**
+  /// **'Unidentified'**
   String get speakerUnknown;
 
   /// No description provided for @fieldStatusAi.

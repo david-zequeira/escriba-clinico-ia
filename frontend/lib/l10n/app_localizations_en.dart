@@ -187,7 +187,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get speakerPatient => 'Patient';
 
   @override
-  String get speakerUnknown => 'Unknown';
+  String get speakerUnknown => 'Unidentified';
 
   @override
   String get fieldStatusAi => 'AI';

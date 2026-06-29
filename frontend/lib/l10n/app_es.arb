@@ -59,7 +59,7 @@
 
   "speakerDoctor": "Médico",
   "speakerPatient": "Paciente",
-  "speakerUnknown": "Desconocido",
+  "speakerUnknown": "Sin identificar",
 
   "fieldStatusAi": "IA",
   "fieldStatusEmpty": "Vacío",

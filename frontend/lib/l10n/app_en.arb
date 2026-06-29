@@ -64,7 +64,7 @@
 
   "speakerDoctor": "Doctor",
   "speakerPatient": "Patient",
-  "speakerUnknown": "Unknown",
+  "speakerUnknown": "Unidentified",
 
   "fieldStatusAi": "AI",
   "fieldStatusEmpty": "Empty",
