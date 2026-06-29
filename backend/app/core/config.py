@@ -60,6 +60,15 @@ class Settings(BaseSettings):
     # En dev se permite un usuario simulado; en prod debe validarse el token real.
     AUTH_DEV_BYPASS: bool = True
 
+    @property
+    def is_dev_like(self) -> bool:
+        """Entorno de desarrollo/pruebas donde se permiten proveedores 'mock'.
+
+        Fuera de aquí (staging/prod) el mock se prohíbe: un mock que fabrica una
+        conversación clínica nunca debe poder activarse con datos reales (§7).
+        """
+        return self.ENV.lower() in ("dev", "test", "local")
+
 
 @lru_cache
 def get_settings() -> Settings:

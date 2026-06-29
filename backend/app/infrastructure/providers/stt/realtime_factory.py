@@ -7,11 +7,13 @@ from __future__ import annotations
 
 from app.core.config import settings
 from app.domain.ports import RealtimeSTTProvider
+from app.infrastructure.providers.guards import ensure_mock_allowed
 from app.infrastructure.providers.stt.realtime_mock import MockRealtimeSTTProvider
 
 
 def get_realtime_stt_provider() -> RealtimeSTTProvider:
     provider = settings.STT_REALTIME_PROVIDER.lower()
+    ensure_mock_allowed(provider)
     if provider == "mock":
         return MockRealtimeSTTProvider()
     if provider == "gladia":

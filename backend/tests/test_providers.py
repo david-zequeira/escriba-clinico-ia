@@ -67,3 +67,23 @@ def test_prompt_estructuracion_mantiene_anti_alucinacion(consultation_type):
     assert "no inventes" in prompt  # no fabricar datos
     # Conserva el ejemplo contrastivo incorrecto/correcto que ancla la regla.
     assert "incorrecto" in prompt and "correcto" in prompt
+
+
+def test_mock_prohibido_fuera_de_dev(monkeypatch):
+    """El proveedor 'mock' fabrica datos clínicos: prohibido en staging/prod (§7)."""
+    from app.core import config
+    from app.infrastructure.providers.guards import ensure_mock_allowed
+
+    monkeypatch.setattr(config.settings, "ENV", "production")
+    with pytest.raises(RuntimeError, match="mock"):
+        ensure_mock_allowed("mock")
+    # Un proveedor real nunca se bloquea.
+    ensure_mock_allowed("speechmatics")
+
+
+def test_mock_permitido_en_dev(monkeypatch):
+    from app.core import config
+    from app.infrastructure.providers.guards import ensure_mock_allowed
+
+    monkeypatch.setattr(config.settings, "ENV", "dev")
+    ensure_mock_allowed("mock")  # no lanza
