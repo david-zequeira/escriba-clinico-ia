@@ -46,3 +46,24 @@ def test_gladia_provider_requires_api_key(monkeypatch):
 
     with pytest.raises(ValueError, match="STT_API_KEY"):
         GladiaSTTProvider()
+
+
+@pytest.mark.parametrize(
+    "consultation_type",
+    [
+        ConsultationType.admission_interview,
+        ConsultationType.treatment_orders,
+        ConsultationType.evolution,
+    ],
+)
+def test_prompt_estructuracion_mantiene_anti_alucinacion(consultation_type):
+    """Guarda la regla NO NEGOCIABLE (CLAUDE.md §7.7): el prompt no debe inventar
+    datos ni narrar ausencias, y debe dejar vacíos los campos sin información."""
+    from app.infrastructure.providers.llm.prompts import get_system_prompt
+
+    prompt = get_system_prompt(consultation_type).lower()
+    assert "ausencias" in prompt  # prohíbe narrar lo que NO se dijo
+    assert "vacío" in prompt  # campos sin datos quedan vacíos
+    assert "no inventes" in prompt  # no fabricar datos
+    # Conserva el ejemplo contrastivo incorrecto/correcto que ancla la regla.
+    assert "incorrecto" in prompt and "correcto" in prompt

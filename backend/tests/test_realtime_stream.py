@@ -165,6 +165,90 @@ async def test_draft_from_transcript_diariza_segmentos_desconocidos():
     assert consultation.status == ConsultationStatus.completed
 
 
+class _SpyLLM(MockLLMProvider):
+    """LLM mock que registra si se llamó a assign_speakers y con qué textos.
+
+    Devuelve una etiqueta distintiva ('paciente') para poder comprobar que sus
+    etiquetas se aplicaron a la transcripción. Reutiliza structure_note del mock.
+    """
+
+    def __init__(self) -> None:
+        self.assign_calls: list[list[str]] = []
+
+    async def assign_speakers(
+        self, texts, consultation_type=ConsultationType.admission_interview
+    ):
+        self.assign_calls.append(list(texts))
+        return ["paciente"] * len(texts)
+
+
+async def test_draft_diariza_cuando_el_stt_no_separo_dos_voces():
+    """Una sola voz en vivo deja todo en un único interlocutor (p. ej. 'medico'):
+    el LLM debe reasignar por contenido igualmente (no solo si es 'desconocido')."""
+    consultation = Consultation(
+        doctor_id="d-1",
+        patient_id="p-1",
+        consultation_type=ConsultationType.admission_interview,
+    )
+    repo = _InMemoryRepo(consultation)
+    transcript = Transcript(
+        segments=[
+            TranscriptSegment(speaker="medico", text="Hola."),
+            TranscriptSegment(speaker="medico", text="Me duele el pecho."),
+        ]
+    )
+    spy = _SpyLLM()
+
+    await DraftFromTranscriptUseCase(repo, spy).execute(consultation.id, transcript)
+
+    assert spy.assign_calls == [["Hola.", "Me duele el pecho."]]  # se llamó al LLM
+    speakers = [s.speaker for s in consultation.transcript.segments]
+    assert speakers == ["paciente", "paciente"]  # se aplicaron sus etiquetas
+
+
+async def test_draft_respeta_diarizacion_limpia_del_stt():
+    """Si el STT separó a médico y paciente sin dejar nadie sin identificar, se
+    respeta y NO se invoca al LLM de diarización."""
+    consultation = Consultation(
+        doctor_id="d-1",
+        patient_id="p-1",
+        consultation_type=ConsultationType.admission_interview,
+    )
+    repo = _InMemoryRepo(consultation)
+    transcript = Transcript(
+        segments=[
+            TranscriptSegment(speaker="medico", text="¿Qué le ocurre?"),
+            TranscriptSegment(speaker="paciente", text="Me duele el pecho."),
+        ]
+    )
+    spy = _SpyLLM()
+
+    await DraftFromTranscriptUseCase(repo, spy).execute(consultation.id, transcript)
+
+    assert spy.assign_calls == []  # no se reasigna: el STT ya separó
+    speakers = [s.speaker for s in consultation.transcript.segments]
+    assert speakers == ["medico", "paciente"]
+
+
+async def test_draft_no_diariza_en_tipos_de_dictado():
+    """En dictado (no entrevista) no hay dos interlocutores: no se diariza."""
+    consultation = Consultation(
+        doctor_id="d-1",
+        patient_id="p-1",
+        consultation_type=ConsultationType.treatment_orders,
+    )
+    repo = _InMemoryRepo(consultation)
+    transcript = Transcript(
+        segments=[TranscriptSegment(speaker="medico", text="Paracetamol 1 g cada 8 h.")]
+    )
+    spy = _SpyLLM()
+
+    await DraftFromTranscriptUseCase(repo, spy).execute(consultation.id, transcript)
+
+    assert spy.assign_calls == []
+    assert consultation.status == ConsultationStatus.completed
+
+
 def test_websocket_stream_genera_borrador_desde_el_stream():
     """De extremo a extremo: crear consulta → stream WS → borrador sin re-subir audio."""
     with TestClient(app) as client:
