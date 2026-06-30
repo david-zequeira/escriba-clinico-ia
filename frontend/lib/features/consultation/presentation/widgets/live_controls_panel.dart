@@ -5,8 +5,10 @@ import 'package:escriba_clinico/core/l10n_ext.dart';
 import 'package:escriba_clinico/features/consultation/state_management/live_transcription_controller.dart';
 import 'package:escriba_clinico/models/consultation_type.dart';
 
-/// Panel de control de la sesión en vivo: tipo de documento, estado de la
-/// sesión, waveform con amplitud real y botones iniciar/pausar/reanudar/finalizar.
+/// Panel de control de la captura: tipo de documento, identidad del paciente,
+/// estado de la sesión, waveform con amplitud real y botones
+/// iniciar/pausar/reanudar/finalizar. Tras finalizar muestra el progreso de
+/// generación del borrador.
 class LiveControlsPanel extends StatelessWidget {
   const LiveControlsPanel({
     super.key,
@@ -18,6 +20,10 @@ class LiveControlsPanel extends StatelessWidget {
     required this.onPause,
     required this.onResume,
     required this.onStop,
+    this.generatingDraft = false,
+    this.patientIdController,
+    this.patientIdFocus,
+    this.patientIdEnabled = true,
   });
 
   final ConsultationType type;
@@ -28,6 +34,14 @@ class LiveControlsPanel extends StatelessWidget {
   final VoidCallback? onPause;
   final VoidCallback? onResume;
   final VoidCallback? onStop;
+
+  /// `true` mientras el backend genera el borrador tras Finalizar.
+  final bool generatingDraft;
+
+  /// Identidad del paciente. Si es null, no se muestra el campo (modo demo).
+  final TextEditingController? patientIdController;
+  final FocusNode? patientIdFocus;
+  final bool patientIdEnabled;
 
   bool get _listening => status == LiveStatus.listening;
   bool get _paused => status == LiveStatus.paused;
@@ -56,6 +70,22 @@ class LiveControlsPanel extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(l.liveRecordingHint, style: Theme.of(context).textTheme.bodyLarge),
+          // Identidad del paciente: solo antes de iniciar (no durante la captura).
+          if (patientIdController != null && !_active && !generatingDraft) ...[
+            const SizedBox(height: 20),
+            TextField(
+              controller: patientIdController,
+              focusNode: patientIdFocus,
+              enabled: patientIdEnabled,
+              decoration: InputDecoration(
+                labelText: l.patientIdLabel,
+                hintText: l.patientIdHint,
+                prefixIcon: const Icon(Icons.badge_outlined, size: 20),
+              ),
+              textCapitalization: TextCapitalization.characters,
+              textInputAction: TextInputAction.done,
+            ),
+          ],
           const SizedBox(height: 24),
           Center(
             child: SizedBox(
@@ -71,7 +101,15 @@ class LiveControlsPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          if (!_active)
+          if (generatingDraft) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: const LinearProgressIndicator(minHeight: 6),
+            ),
+            const SizedBox(height: 10),
+            Text(l.generatingDraft,
+                style: Theme.of(context).textTheme.bodyMedium),
+          ] else if (!_active)
             FilledButton.icon(
               onPressed: onStart,
               icon: const Icon(Icons.fiber_manual_record_rounded),

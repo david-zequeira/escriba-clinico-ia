@@ -419,7 +419,7 @@ abstract class AppLocalizations {
   /// No description provided for @speakerUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Unknown'**
+  /// **'Unidentified'**
   String get speakerUnknown;
 
   /// No description provided for @fieldStatusAi.
@@ -841,6 +841,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error'**
   String get liveStatusError;
+
+  /// No description provided for @generatingDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating draft…'**
+  String get generatingDraft;
 }
 
 class _AppLocalizationsDelegate

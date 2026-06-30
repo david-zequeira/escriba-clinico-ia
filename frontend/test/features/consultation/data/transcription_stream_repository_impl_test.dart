@@ -19,6 +19,11 @@ class _FakeSource implements TranscriptionStreamSource {
   Stream<Map<String, dynamic>> frames(String consultationId) =>
       Stream.fromIterable(_frames);
 
+  final sentAudio = <List<int>>[];
+
+  @override
+  Future<void> sendAudio(List<int> bytes) async => sentAudio.add(bytes);
+
   @override
   Future<void> pause() async => pauseCalls++;
 

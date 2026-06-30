@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -20,6 +21,9 @@ import 'package:escriba_clinico/core/config.dart';
 abstract class TranscriptionStreamSource {
   /// Abre el canal para [consultationId] y emite los frames crudos.
   Stream<Map<String, dynamic>> frames(String consultationId);
+
+  /// Envía un chunk de audio PCM por el canal (para el STT en streaming real).
+  Future<void> sendAudio(List<int> bytes);
 
   /// Pausa la emisión (control de sesión).
   Future<void> pause();
@@ -60,6 +64,12 @@ class WebSocketTranscriptionSource implements TranscriptionStreamSource {
           '${frame['speaker'] ?? ''} "${frame['text'] ?? ''}"');
       return frame;
     });
+  }
+
+  @override
+  Future<void> sendAudio(List<int> bytes) async {
+    // Frame BINARIO: el backend lo entrega tal cual al STT en streaming.
+    _channel?.sink.add(bytes is Uint8List ? bytes : Uint8List.fromList(bytes));
   }
 
   @override
@@ -146,6 +156,11 @@ class FakeTranscriptionStreamSource implements TranscriptionStreamSource {
       await Future<void>.delayed(const Duration(milliseconds: 80));
     }
     return _closed;
+  }
+
+  @override
+  Future<void> sendAudio(List<int> bytes) async {
+    // El mock no usa el audio: emite un guion fijo. Lo descarta.
   }
 
   @override

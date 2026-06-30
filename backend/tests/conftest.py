@@ -9,7 +9,10 @@ _DB_FD, _DB_PATH = tempfile.mkstemp(suffix=".db")
 os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_DB_PATH}"
 os.environ["AUDIO_STORAGE_DIR"] = tempfile.mkdtemp()
 os.environ["STT_PROVIDER"] = "mock"
+os.environ["STT_REALTIME_PROVIDER"] = "mock"  # tests herméticos: nunca Gladia real
 os.environ["LLM_PROVIDER"] = "mock"
+os.environ["STT_API_KEY"] = ""  # no usar claves reales del .env en los tests
+os.environ["LLM_API_KEY"] = ""
 os.environ["JOB_QUEUE"] = "asyncio"
 os.environ["ENV"] = "test"
 

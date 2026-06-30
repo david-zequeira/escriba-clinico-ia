@@ -105,6 +105,17 @@ class LLMProvider(ABC):
         specialty: str = "general",
     ) -> ClinicalDraft: ...
 
+    @abstractmethod
+    async def assign_speakers(
+        self,
+        texts: list[str],
+        consultation_type: ConsultationType = ConsultationType.admission_interview,
+    ) -> list[str]:
+        """Atribuye interlocutor ('medico'|'paciente'|'desconocido') a cada
+        intervención, en orden. Para diarizar cuando el STT no lo hace (mono).
+        No inventa: ante la duda, 'desconocido'."""
+        ...
+
 
 class AudioStorage(ABC):
     """Almacenamiento del archivo de audio (no persistente por defecto)."""

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vionix_app_ui/vionix_app_ui.dart';
 
 import 'package:escriba_clinico/core/l10n_ext.dart';
-import 'package:escriba_clinico/features/consultation/presentation/screens/recording_screen.dart';
+import 'package:escriba_clinico/features/consultation/presentation/screens/consultation_capture_screen.dart';
 import 'package:escriba_clinico/models/consultation_type.dart';
 
 /// Tarjeta de selección de un tipo de documento clínico.
@@ -13,7 +13,7 @@ class TypeCard extends StatelessWidget {
 
   void _open(BuildContext context) {
     Navigator.of(context)
-        .push(AppPageRoute(page: RecordingScreen(consultationType: type)));
+        .push(AppPageRoute(page: ConsultationCaptureScreen(consultationType: type)));
   }
 
   @override

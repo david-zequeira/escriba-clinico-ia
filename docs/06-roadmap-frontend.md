@@ -53,11 +53,19 @@ batería de pruebas por feature y **hook `pre-push`** que corre analyze + tests.
 
 ## Fase F2 — Captura en vivo (streaming · front-led + WS backend)
 
-> **Estado: Slice 1 implementado (front-led, mock).** Pantalla de transcripción en
-> vivo (parciales + diarización) sobre `FakeTranscriptionStreamSource`, waveform con
-> **amplitud real** del micrófono y control **pausar/reanudar**. El contrato WebSocket
-> queda documentado en [`07-contrato-streaming.md`](07-contrato-streaming.md) para el
-> backend. Pendiente (Slice 2): borrador que se construye en vivo + endpoint WS real.
+> **Estado: Slice 1 + 2, flujo unificado.** Captura en una **sola pantalla**
+> (`ConsultationCaptureScreen`): paciente + consentimiento → transcripción en vivo
+> (parciales + diarización) sobre el **WebSocket real** del backend, waveform con
+> **amplitud real** y **pausar/reanudar** → **Finalizar**. Al finalizar, el **backend
+> genera el borrador a partir de la propia transcripción del stream** (sin re-subir
+> audio) y se abre la revisión. Sustituye a las pantallas separadas de grabación y de
+> live. Contrato en [`07-contrato-streaming.md`](07-contrato-streaming.md).
+>
+> **STT real (Gladia v2 Live):** implementado y config-gated
+> (`STT_REALTIME_PROVIDER=gladia` + `STT_API_KEY`, ver
+> [`07-contrato-streaming.md`](07-contrato-streaming.md) §8). El frontend ya envía el
+> audio del micrófono por el canal. **Pendiente:** diarización fiable en mono y
+> prueba end-to-end con clave real.
 
 **Objetivo:** reducir la espera y dar sensación de producto "en tiempo real".
 

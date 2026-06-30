@@ -19,6 +19,10 @@ class AudioRecorderDataSource {
   AudioRecorder _recorder = AudioRecorder();
   StreamSubscription<Uint8List>? _streamSub;
   final BytesBuilder _pcmBuffer = BytesBuilder(copy: false);
+  // Difunde los chunks PCM en vivo (para enviarlos al WS de transcripción real).
+  // Vive lo que vive el datasource (singleton); no se cierra entre sesiones.
+  final StreamController<Uint8List> _pcmStream =
+      StreamController<Uint8List>.broadcast();
   bool _streaming = false;
   DateTime? _startedAt;
 
@@ -64,7 +68,10 @@ class AudioRecorderDataSource {
       _pcmBuffer.clear();
       final stream = await _recorder.startStream(_streamConfig);
       _streaming = true;
-      _streamSub = stream.listen(_pcmBuffer.add);
+      _streamSub = stream.listen((chunk) {
+        _pcmBuffer.add(chunk);
+        if (!_pcmStream.isClosed) _pcmStream.add(chunk);
+      });
     } else {
       await _recorder.start(_fileConfig, path: tempPath);
     }
@@ -78,6 +85,11 @@ class AudioRecorderDataSource {
     }
     _startedAt = DateTime.now();
   }
+
+  /// Chunks de audio PCM (16-bit, 16 kHz, mono) en vivo durante la captura, para
+  /// alimentar el STT en streaming. Solo emite en plataformas de stream (hoy
+  /// macOS); en modo fichero no hay audio en vivo que reenviar.
+  Stream<Uint8List> get audioChunks => _pcmStream.stream;
 
   /// Pausa la captura sin cerrar la sesión (el micrófono sigue reservado).
   Future<void> pause() => _recorder.pause();

@@ -59,7 +59,7 @@
 
   "speakerDoctor": "Médico",
   "speakerPatient": "Paciente",
-  "speakerUnknown": "Desconocido",
+  "speakerUnknown": "Sin identificar",
 
   "fieldStatusAi": "IA",
   "fieldStatusEmpty": "Vacío",
@@ -137,5 +137,6 @@
   "liveStatusListening": "Escuchando",
   "liveStatusPaused": "En pausa",
   "liveStatusStopped": "Finalizada",
-  "liveStatusError": "Error"
+  "liveStatusError": "Error",
+  "generatingDraft": "Generando borrador…"
 }

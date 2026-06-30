@@ -39,6 +39,12 @@ class Settings(BaseSettings):
     GLADIA_MODEL: str = "solaria-3"  # solaria-3 (EU, es/fr/en/de/it) | solaria-1
     GLADIA_POLL_INTERVAL_SEC: float = 2.0
     GLADIA_POLL_TIMEOUT_SEC: float = 600.0
+    # Speechmatics Real-Time (modelo médico, endpoint UE para residencia de datos).
+    SPEECHMATICS_API_KEY: str = ""
+    SPEECHMATICS_RT_URL: str = "wss://eu.rt.speechmatics.com/v2"
+    SPEECHMATICS_OPERATING_POINT: str = "enhanced"  # enhanced (máxima precisión) | standard
+    SPEECHMATICS_DOMAIN: str = "medical"  # modelo médico; vaciar si la cuenta no lo tiene
+    SPEECHMATICS_MAX_DELAY: float = 2.0  # latencia/precisión de los finales (s)
 
     # --- LLM (estructuración) ---
     LLM_PROVIDER: str = "mock"  # mock | mistral
@@ -53,6 +59,15 @@ class Settings(BaseSettings):
     OIDC_AUDIENCE: str = ""
     # En dev se permite un usuario simulado; en prod debe validarse el token real.
     AUTH_DEV_BYPASS: bool = True
+
+    @property
+    def is_dev_like(self) -> bool:
+        """Entorno de desarrollo/pruebas donde se permiten proveedores 'mock'.
+
+        Fuera de aquí (staging/prod) el mock se prohíbe: un mock que fabrica una
+        conversación clínica nunca debe poder activarse con datos reales (§7).
+        """
+        return self.ENV.lower() in ("dev", "test", "local")
 
 
 @lru_cache

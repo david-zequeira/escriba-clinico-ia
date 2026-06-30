@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:escriba_clinico/core/app_log.dart';
 import 'package:escriba_clinico/features/audio/data/repositories/audio_repository_impl.dart';
+import 'package:escriba_clinico/features/audio/domain/entities/recorded_audio.dart';
 import 'package:escriba_clinico/features/audio/domain/repositories/audio_repository.dart';
 import 'package:escriba_clinico/features/consultation/data/repositories/transcription_stream_repository_impl.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/transcript.dart';
@@ -62,15 +63,21 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
 
   StreamSubscription<TranscriptionEvent>? _eventsSub;
   StreamSubscription<double>? _amplitudeSub;
+  StreamSubscription<List<int>>? _audioChunksSub;
 
   final List<TranscriptSegment> _finalized = [];
   TranscriptSegment? _partial;
+
+  /// Ruta temporal de la grabación de la sesión actual; necesaria para recuperar
+  /// el audio en [finishCapture] y generar el borrador.
+  String? _tempPath;
 
   Future<void> start(String consultationId, {required String tempPath}) async {
     if (state.isActive) return;
     state = const LiveTranscriptionState(status: LiveStatus.connecting);
     _finalized.clear();
     _partial = null;
+    _tempPath = tempPath;
 
     devLog('F2.live', 'start consultation=$consultationId');
     try {
@@ -79,6 +86,12 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
       _amplitudeSub = _audio.amplitudeStream().listen(
             (level) => state = state.copyWith(amplitude: level),
             onError: (e) => devLog('F2.live', 'error amplitud: $e'),
+          );
+      // Reenvía el audio del micrófono por el canal para el STT en streaming
+      // real (con el mock no tiene efecto; el mock ignora el audio).
+      _audioChunksSub = _audio.audioChunks().listen(
+            (chunk) => _transcription.sendAudio(chunk),
+            onError: (e) => devLog('F2.live', 'error audio: $e'),
           );
       _eventsSub = _transcription.connect(consultationId).listen(
             _onEvent,
@@ -121,6 +134,32 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
     state = state.copyWith(status: LiveStatus.stopped, amplitude: 0);
   }
 
+  /// Finaliza la captura CONSERVANDO el audio: cierra el stream y el micrófono
+  /// pero devuelve los bytes grabados para generar el borrador (a diferencia de
+  /// [stop], que descarta). Deja la sesión en `stopped`.
+  Future<RecordedAudio?> finishCapture() async {
+    if (state.status == LiveStatus.idle) return null;
+    await _audioChunksSub?.cancel();
+    _audioChunksSub = null;
+    await _amplitudeSub?.cancel();
+    _amplitudeSub = null;
+    await _eventsSub?.cancel();
+    _eventsSub = null;
+    await _transcription.close();
+
+    RecordedAudio? audio;
+    final path = _tempPath;
+    if (path != null) {
+      try {
+        audio = await _audio.stop(tempPath: path);
+      } catch (e) {
+        devLog('F2.live', 'no se pudo recuperar el audio al finalizar: $e');
+      }
+    }
+    state = state.copyWith(status: LiveStatus.stopped, amplitude: 0);
+    return audio;
+  }
+
   void _onEvent(TranscriptionEvent event) {
     switch (event) {
       case TranscriptPartial(:final segment):
@@ -158,6 +197,8 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
   }
 
   Future<void> _teardown() async {
+    await _audioChunksSub?.cancel();
+    _audioChunksSub = null;
     await _amplitudeSub?.cancel();
     _amplitudeSub = null;
     await _eventsSub?.cancel();
@@ -170,6 +211,7 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
 
   @override
   void dispose() {
+    _audioChunksSub?.cancel();
     _amplitudeSub?.cancel();
     _eventsSub?.cancel();
     unawaited(_transcription.close());

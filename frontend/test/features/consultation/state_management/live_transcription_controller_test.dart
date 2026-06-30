@@ -36,9 +36,14 @@ class _FakeAudio implements AudioRepository {
   Stream<double> amplitudeStream({Duration interval = const Duration(milliseconds: 120)}) =>
       amplitudeCtrl.stream;
 
+  final audioChunksCtrl = StreamController<List<int>>.broadcast();
+
+  @override
+  Stream<List<int>> audioChunks() => audioChunksCtrl.stream;
+
   @override
   Future<RecordedAudio> stop({required String tempPath}) async =>
-      RecordedAudio(bytes: Uint8List(0), filename: 'x.wav');
+      RecordedAudio(bytes: Uint8List.fromList([1, 2, 3]), filename: 'x.wav');
 
   @override
   Future<void> dispose() async => disposed = true;
@@ -53,6 +58,11 @@ class _FakeTranscription implements TranscriptionStreamRepository {
 
   @override
   Stream<TranscriptionEvent> connect(String consultationId) => ctrl.stream;
+
+  final sentAudio = <List<int>>[];
+
+  @override
+  Future<void> sendAudio(List<int> bytes) async => sentAudio.add(bytes);
 
   @override
   Future<void> pause() async => pauseCalls++;
@@ -110,6 +120,17 @@ void main() {
     expect(segs.single.text, 'me duele la cabeza');
   });
 
+  test('reenvía los chunks de audio del micrófono a la transcripción', () async {
+    await controller.start('c-1', tempPath: '/tmp/x.wav');
+
+    audio.audioChunksCtrl.add([1, 2, 3]);
+    await _settle();
+
+    expect(transcription.sentAudio, [
+      [1, 2, 3]
+    ]);
+  });
+
   test('la amplitud del micrófono se refleja en el estado', () async {
     await controller.start('c-1', tempPath: '/tmp/x.wav');
 
@@ -141,6 +162,17 @@ void main() {
 
     expect(controller.state.status, LiveStatus.stopped);
     expect(audio.disposed, isTrue);
+    expect(transcription.closed, isTrue);
+  });
+
+  test('finishCapture conserva el audio y cierra el canal', () async {
+    await controller.start('c-1', tempPath: '/tmp/x.wav');
+
+    final recorded = await controller.finishCapture();
+
+    expect(recorded, isNotNull);
+    expect(recorded!.bytes, [1, 2, 3]);
+    expect(controller.state.status, LiveStatus.stopped);
     expect(transcription.closed, isTrue);
   });
 
