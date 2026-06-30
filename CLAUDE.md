@@ -177,3 +177,58 @@ Las integraciones externas (Speechmatics, Mistral) están como **stubs** con
 resultados simulados para que el flujo funcione de extremo a extremo. Tareas reales
 pendientes: implementar el SDK de STT, el de LLM con salida estructurada JSON, el
 conector FHIR con el HIS del hospital piloto, y la autenticación OIDC.
+
+---
+
+## 10. Pruebas y pre-push (NO NEGOCIABLE)
+
+**Siempre se ejecutan las pruebas antes de `git push`** — tanto personas como
+asistentes de IA. Esto está garantizado por un hook de Git versionado.
+
+### Frontend (Flutter)
+- Las pruebas viven en `frontend/test/` **espejando `lib/`**: una carpeta por feature
+  (`test/features/<feature>/{domain,data,state_management}/...`).
+- Convención: cada feature tiene pruebas de su **dominio** (entidades), su **repositorio**
+  (con datasource/fake, sin red) y su **controller** (con repo falso vía `ProviderContainer`
+  + `overrideWithValue`). No se mockea con red real ni dispositivos.
+- Comandos: `flutter analyze` y `flutter test` (desde `frontend/`).
+
+### Hook pre-push (el "lugar indicado")
+- Script versionado: [`.githooks/pre-push`](./.githooks/pre-push). Corre `flutter analyze`
+  + `flutter test`; si algo falla, **aborta el push**.
+- Activación una sola vez por clon:
+  ```bash
+  git config core.hooksPath .githooks
+  ```
+- Resuelve Flutter desde PATH, `fvm` o `~/fvm/versions/*` automáticamente.
+
+### Regla para asistentes de IA
+Antes de proponer o ejecutar `git push`, ejecuta las pruebas y confirma que están en
+verde. Si añades una feature nueva, **añade su carpeta de pruebas** siguiendo la
+convención de arriba (dominio + repo + controller).
+
+> Backend: mantiene su propia suite `pytest` (ver `backend/README.md`). Puede añadirse al
+> hook o a CI cuando el equipo lo decida.
+
+---
+
+## 11. Internacionalización (i18n) — REGLA PERMANENTE
+
+La app usa `gen_l10n` con **español (por defecto/fallback) e inglés**. Archivos en
+`frontend/lib/l10n/` (`app_es.arb`, `app_en.arb`); acceso vía `context.l10n.<clave>`
+(extensión en `frontend/lib/core/l10n_ext.dart`).
+
+**Regla para asistentes de IA y el equipo:** **nunca** escribas texto de usuario
+*hardcodeado* en los widgets. Cada cadena nueva visible:
+1. Se añade como clave en **`app_en.arb` y `app_es.arb`** (ambos; con placeholders si lleva
+   variables).
+2. Se usa en la UI con `context.l10n.<clave>` (jamás un literal).
+3. Los estilos de texto salen **siempre del theme** (`Theme.of(context).textTheme` /
+   `context.tokens`), nunca colores hardcodeados, para que se vean bien en claro/oscuro.
+
+> Persistencia de preferencias (p. ej. tema): `shared_preferences` desde el controller
+> Riverpod (cargar en el constructor, guardar en cada cambio) — equivalente a `hydrated_bloc`.
+>
+> Pendiente de migrar a i18n (cadenas en clases sin `BuildContext`): etiquetas de
+> `ConsultationType`, `DocumentTemplates`, `Speaker`, chips de estado y mensajes de error
+> lanzados. Migrar cuando se toquen, pasando los textos ya traducidos desde la capa de UI.

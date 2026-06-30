@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+#
+# Hook pre-push: ejecuta SIEMPRE las pruebas del frontend antes de permitir el push.
+# Si analyze o los tests fallan, el push se aborta. Aplica tanto a personas como
+# a asistentes de IA (Claude Code), porque se dispara en `git push`.
+#
+# Activación (una vez por clon):  git config core.hooksPath .githooks
+#
+set -euo pipefail
+
+echo "▶ pre-push: verificando el frontend antes de subir…"
+
+ROOT=$(git rev-parse --show-toplevel)
+
+# git inyecta variables GIT_* en el entorno del hook (GIT_DIR, GIT_COMMON_DIR,
+# GIT_OBJECT_DIRECTORY, etc.; más aún en worktrees). Cualquiera de ellas confunde a
+# las herramientas que usan git por dentro: fvm (valida su cache.git) y la propia
+# detección de versión de Flutter (queda en 0.0.0-unknown y rompe la resolución de
+# paquetes). Por eso se desexportan TODAS antes de invocar a Flutter.
+for _gv in $(env | sed -n 's/^\(GIT_[A-Za-z0-9_]*\)=.*/\1/p'); do unset "$_gv"; done
+
+# Trabajamos desde frontend: así .fvmrc es visible para resolver la versión fvm.
+cd "$ROOT/frontend"
+
+# --- Resolver Flutter (fvm fijado en .fvmrc → flutter del PATH → ~/fvm/versions/*) ---
+# Se prioriza fvm: en este repo la versión está fijada en frontend/.fvmrc y el
+# binario suelto de fvm (~/fvm/versions/*/bin/flutter) puede reportar versión
+# desconocida; `fvm flutter` resuelve siempre la correcta.
+resolve_flutter() {
+  if command -v fvm >/dev/null 2>&1 && [ -f .fvmrc ]; then echo "fvm flutter"; return; fi
+  if command -v flutter >/dev/null 2>&1; then echo "flutter"; return; fi
+  local latest
+  latest=$(ls -d "$HOME"/fvm/versions/*/bin/flutter 2>/dev/null | sort -V | tail -1 || true)
+  [ -n "$latest" ] && echo "$latest" || echo ""
+}
+
+FLUTTER=$(resolve_flutter)
+if [ -z "$FLUTTER" ]; then
+  echo "✖ No se encontró Flutter (ni fvm ni en PATH). Instálalo o añádelo al PATH."
+  exit 1
+fi
+
+# --- Guard i18n: ningún texto de usuario hardcodeado en widgets ---
+# Detecta literales en Text()/labelText/hintText/tooltip/message/content: Text().
+# Excluye l10n generado, la marca "Vionix" y los tests. Todo texto debe ir a
+# lib/l10n/*.arb y usarse con context.l10n (ver CLAUDE.md §11).
+echo "▶ guard i18n (sin texto hardcodeado)…"
+HARDCODED=$(grep -rnE "(Text\(|labelText:|hintText:|tooltip:|message:|content: Text\(|label: Text\()[[:space:]]*['\"][^'\"]*[A-Za-zÁÉÍÓÚáéíóúñ]" lib 2>/dev/null \
+  | grep -v "/l10n/" | grep -vi "Vionix" || true)
+if [ -n "$HARDCODED" ]; then
+  echo "✖ Texto hardcodeado detectado — usa context.l10n y añade la clave a lib/l10n/*.arb:"
+  echo "$HARDCODED"
+  exit 1
+fi
+
+echo "▶ flutter analyze…"
+$FLUTTER analyze || { echo "✖ 'flutter analyze' encontró problemas — push abortado."; exit 1; }
+
+echo "▶ flutter test…"
+$FLUTTER test || { echo "✖ Las pruebas fallaron — push abortado."; exit 1; }
+
+echo "✓ Frontend verde (analyze + tests). Continúa el push."
