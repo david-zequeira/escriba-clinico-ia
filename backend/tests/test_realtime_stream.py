@@ -166,20 +166,32 @@ async def test_draft_from_transcript_diariza_segmentos_desconocidos():
 
 
 class _SpyLLM(MockLLMProvider):
-    """LLM mock que registra si se llamó a assign_speakers y con qué textos.
+    """LLM mock que registra las llamadas de diarización.
 
-    Devuelve una etiqueta distintiva ('paciente') para poder comprobar que sus
-    etiquetas se aplicaron a la transcripción. Reutiliza structure_note del mock.
+    - `assign_speakers` (mono): devuelve 'paciente' para toda intervención.
+    - `assign_cluster_roles` (diarización limpia): si se le pasan `cluster_roles`
+      los devuelve tal cual (para simular confirmación o inversión); si no, usa el
+      del mock. Reutiliza structure_note del mock.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, cluster_roles: list[str] | None = None) -> None:
         self.assign_calls: list[list[str]] = []
+        self.cluster_calls: list[list[list[str]]] = []
+        self._cluster_roles = cluster_roles
 
     async def assign_speakers(
         self, texts, consultation_type=ConsultationType.admission_interview
     ):
         self.assign_calls.append(list(texts))
         return ["paciente"] * len(texts)
+
+    async def assign_cluster_roles(
+        self, clusters, consultation_type=ConsultationType.admission_interview
+    ):
+        self.cluster_calls.append([list(c) for c in clusters])
+        if self._cluster_roles is not None:
+            return list(self._cluster_roles)
+        return await super().assign_cluster_roles(clusters, consultation_type)
 
 
 async def test_draft_diariza_cuando_el_stt_no_separo_dos_voces():
@@ -206,9 +218,10 @@ async def test_draft_diariza_cuando_el_stt_no_separo_dos_voces():
     assert speakers == ["paciente", "paciente"]  # se aplicaron sus etiquetas
 
 
-async def test_draft_respeta_diarizacion_limpia_del_stt():
-    """Si el STT separó a médico y paciente sin dejar nadie sin identificar, se
-    respeta y NO se invoca al LLM de diarización."""
+async def test_draft_verifica_rol_por_cluster_en_diarizacion_limpia():
+    """Con dos voces limpias del STT no se confía en el orden: el LLM asigna el
+    rol de cada voz por contenido (una llamada por consulta, no por intervención).
+    Si confirma la orientación, las etiquetas se mantienen."""
     consultation = Consultation(
         doctor_id="d-1",
         patient_id="p-1",
@@ -221,13 +234,61 @@ async def test_draft_respeta_diarizacion_limpia_del_stt():
             TranscriptSegment(speaker="paciente", text="Me duele el pecho."),
         ]
     )
-    spy = _SpyLLM()
+    spy = _SpyLLM(cluster_roles=["medico", "paciente"])  # confirma la orientación
 
     await DraftFromTranscriptUseCase(repo, spy).execute(consultation.id, transcript)
 
-    assert spy.assign_calls == []  # no se reasigna: el STT ya separó
+    assert spy.assign_calls == []  # NO se atribuye intervención a intervención
+    assert spy.cluster_calls == [[["¿Qué le ocurre?"], ["Me duele el pecho."]]]
     speakers = [s.speaker for s in consultation.transcript.segments]
     assert speakers == ["medico", "paciente"]
+
+
+async def test_draft_corrige_inversion_de_roles_por_contenido():
+    """Si el STT etiquetó las voces al revés (paciente como 'medico'), el LLM las
+    reorienta por contenido y el borrador queda con los roles correctos."""
+    consultation = Consultation(
+        doctor_id="d-1",
+        patient_id="p-1",
+        consultation_type=ConsultationType.admission_interview,
+    )
+    repo = _InMemoryRepo(consultation)
+    # Etiquetas del STT INVERTIDAS respecto al contenido.
+    transcript = Transcript(
+        segments=[
+            TranscriptSegment(speaker="medico", text="Me duele el pecho."),
+            TranscriptSegment(speaker="paciente", text="¿Qué le ocurre?"),
+        ]
+    )
+    spy = _SpyLLM(cluster_roles=["paciente", "medico"])  # el LLM invierte
+
+    await DraftFromTranscriptUseCase(repo, spy).execute(consultation.id, transcript)
+
+    speakers = [s.speaker for s in consultation.transcript.segments]
+    assert speakers == ["paciente", "medico"]  # corregido por contenido
+
+
+async def test_draft_conserva_etiquetas_si_el_llm_no_distingue_roles():
+    """Guarda anti-degeneración: si el LLM no separa médico y paciente, se
+    conservan las etiquetas del STT en lugar de empeorar."""
+    consultation = Consultation(
+        doctor_id="d-1",
+        patient_id="p-1",
+        consultation_type=ConsultationType.admission_interview,
+    )
+    repo = _InMemoryRepo(consultation)
+    transcript = Transcript(
+        segments=[
+            TranscriptSegment(speaker="medico", text="¿Qué le ocurre?"),
+            TranscriptSegment(speaker="paciente", text="Me duele el pecho."),
+        ]
+    )
+    spy = _SpyLLM(cluster_roles=["medico", "medico"])  # degenerado
+
+    await DraftFromTranscriptUseCase(repo, spy).execute(consultation.id, transcript)
+
+    speakers = [s.speaker for s in consultation.transcript.segments]
+    assert speakers == ["medico", "paciente"]  # se conservan las originales
 
 
 async def test_draft_no_diariza_en_tipos_de_dictado():

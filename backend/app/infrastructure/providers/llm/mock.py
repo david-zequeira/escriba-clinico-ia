@@ -28,6 +28,20 @@ class MockLLMProvider(LLMProvider):
         # Alternancia médico→paciente→… (el guion empieza con el médico).
         return ["medico" if i % 2 == 0 else "paciente" for i in range(len(texts))]
 
+    async def assign_cluster_roles(
+        self,
+        clusters: list[list[str]],
+        consultation_type: ConsultationType = ConsultationType.admission_interview,
+    ) -> list[str]:
+        await asyncio.sleep(0)
+        if consultation_type != ConsultationType.admission_interview:
+            return ["medico"] * len(clusters)
+        # Primer clúster → médico (suele abrir), segundo → paciente; resto neutro.
+        return [
+            "medico" if i == 0 else "paciente" if i == 1 else "desconocido"
+            for i in range(len(clusters))
+        ]
+
     async def structure_note(
         self,
         transcript: Transcript,

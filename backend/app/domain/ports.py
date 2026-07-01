@@ -116,6 +116,21 @@ class LLMProvider(ABC):
         No inventa: ante la duda, 'desconocido'."""
         ...
 
+    @abstractmethod
+    async def assign_cluster_roles(
+        self,
+        clusters: list[list[str]],
+        consultation_type: ConsultationType = ConsultationType.admission_interview,
+    ) -> list[str]:
+        """Asigna el rol de CADA voz ya separada por diarización acústica.
+
+        Recibe N grupos de intervenciones (cada grupo = una sola voz, según el
+        STT) y devuelve un rol por grupo, en orden. A diferencia de
+        `assign_speakers`, decide con TODA la evidencia de cada voz (más robusto y
+        consistente: nunca deja una misma voz medio invertida). Ante la duda,
+        'desconocido'; no fuerza un rol."""
+        ...
+
 
 class AudioStorage(ABC):
     """Almacenamiento del archivo de audio (no persistente por defecto)."""

@@ -72,6 +72,24 @@ _SPEAKER_SYSTEM_PROMPT = (
     "texto adicional."
 )
 
+_CLUSTER_ROLE_SYSTEM_PROMPT = (
+    "Recibes las intervenciones de una consulta médica YA agrupadas por "
+    "interlocutor: cada grupo corresponde a UNA sola voz (la diarización acústica "
+    "ya separó a los hablantes). Tu tarea es decidir, para CADA grupo, si esa voz "
+    "es la del 'medico' o la del 'paciente', razonando por el CONTENIDO de todo lo "
+    "que dice ese interlocutor.\n"
+    "Pistas:\n"
+    "- El médico pregunta por síntomas, explora, explica, indica pruebas o "
+    "tratamiento, y suele tratar de 'usted'.\n"
+    "- El paciente describe sus síntomas, antecedentes y vivencias en primera "
+    "persona.\n"
+    "- En una entrevista de ingreso hay exactamente un médico y un paciente: no "
+    "asignes el mismo rol a dos grupos.\n"
+    "Si un grupo es genuinamente ambiguo, usa 'desconocido'; no inventes. Devuelve "
+    "EXACTAMENTE una etiqueta por grupo, en el mismo orden recibido, sin texto "
+    "adicional."
+)
+
 _DRAFT_SCHEMA: dict[ConsultationType, type] = {
     ConsultationType.admission_interview: AdmissionNoteDraft,
     ConsultationType.treatment_orders: TreatmentOrdersNoteDraft,
@@ -144,6 +162,39 @@ class MistralLLMProvider(LLMProvider):
         # y cualquier valor inesperado → 'desconocido' (no se inventa interlocutor).
         out: list[str] = []
         for i in range(len(texts)):
+            value = labels[i].strip().lower() if i < len(labels) else "desconocido"
+            out.append(value if value in _VALID_SPEAKERS else "desconocido")
+        return out
+
+    async def assign_cluster_roles(
+        self,
+        clusters: list[list[str]],
+        consultation_type: ConsultationType = ConsultationType.admission_interview,
+    ) -> list[str]:
+        if not clusters:
+            return []
+        # Cada grupo es una sola voz: se presenta su texto agregado como evidencia.
+        blocks = []
+        for i, texts in enumerate(clusters):
+            joined = " ".join(t.strip() for t in texts if t.strip())
+            blocks.append(f"Grupo {i} (una sola voz):\n{joined}")
+        numbered = "\n\n".join(blocks)
+        response = await _parse_with_retry(
+            lambda: self._client.chat.parse_async(
+                model=self._model,
+                messages=[
+                    {"role": "system", "content": _CLUSTER_ROLE_SYSTEM_PROMPT},
+                    {"role": "user", "content": f"Interlocutores a clasificar:\n\n{numbered}"},
+                ],
+                response_format=SpeakerLabelsDraft,
+                temperature=0.0,
+                max_tokens=256,
+            )
+        )
+        parsed = response.choices[0].message.parsed
+        labels = parsed.speakers if parsed is not None else []
+        out: list[str] = []
+        for i in range(len(clusters)):
             value = labels[i].strip().lower() if i < len(labels) else "desconocido"
             out.append(value if value in _VALID_SPEAKERS else "desconocido")
         return out
