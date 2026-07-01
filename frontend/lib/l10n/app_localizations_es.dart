@@ -27,6 +27,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get signIn => 'Iniciar sesión';
 
   @override
+  String get signInWithSso => 'Entrar con SSO del hospital';
+
+  @override
+  String get loginFailed => 'No se pudo iniciar sesión. Inténtalo de nuevo.';
+
+  @override
+  String get devAccessLabel => 'desarrollo';
+
+  @override
   String get devCredentialsHint =>
       'Entorno de desarrollo: cualquier credencial válida.';
 

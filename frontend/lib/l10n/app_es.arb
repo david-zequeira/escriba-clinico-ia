@@ -7,6 +7,9 @@
   "fieldPassword": "Contraseña",
   "validatorPassword": "Introduce tu contraseña",
   "signIn": "Iniciar sesión",
+  "signInWithSso": "Entrar con SSO del hospital",
+  "loginFailed": "No se pudo iniciar sesión. Inténtalo de nuevo.",
+  "devAccessLabel": "desarrollo",
   "devCredentialsHint": "Entorno de desarrollo: cualquier credencial válida.",
 
   "toggleTheme": "Cambiar tema",

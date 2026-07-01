@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:escriba_clinico/features/auth/state_management/auth_controller.dart';
 import 'package:escriba_clinico/features/consultation/data/datasources/transcription_stream_source.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/transcript.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/transcription_event.dart';
@@ -66,7 +67,9 @@ class TranscriptionStreamRepositoryImpl implements TranscriptionStreamRepository
 /// transcribe el audio real; eso llegará con el proveedor STT en streaming real
 /// (Gladia Real-Time). Aun así, esta ruta ya ejercita la tubería completa.
 final transcriptionStreamSourceProvider = Provider<TranscriptionStreamSource>(
-  (ref) => WebSocketTranscriptionSource(),
+  (ref) => WebSocketTranscriptionSource(
+    token: ref.watch(authProvider.select((s) => s.accessToken)),
+  ),
 );
 
 final transcriptionStreamRepositoryProvider =

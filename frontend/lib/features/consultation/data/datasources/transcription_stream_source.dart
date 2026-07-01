@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'package:escriba_clinico/core/app_log.dart';
@@ -39,6 +39,12 @@ abstract class TranscriptionStreamSource {
 /// backend exponga `ws://…/consultations/{id}/stream`; queda lista para que el
 /// cambio sea de una sola línea en el provider (front-first con contrato).
 class WebSocketTranscriptionSource implements TranscriptionStreamSource {
+  WebSocketTranscriptionSource({this.token});
+
+  /// Access token OIDC. El WS no admite cabeceras desde el navegador, así que el
+  /// token viaja como query param (`?token=`), como espera el backend. Null en dev.
+  final String? token;
+
   WebSocketChannel? _channel;
 
   /// Deriva la URL WS de la base HTTP del backend (`http→ws`, `https→wss`).
@@ -48,8 +54,14 @@ class WebSocketTranscriptionSource implements TranscriptionStreamSource {
     return base.replace(
       scheme: wsScheme,
       pathSegments: [...base.pathSegments, 'consultations', consultationId, 'stream'],
+      queryParameters:
+          (token != null && token!.isNotEmpty) ? {'token': token} : null,
     );
   }
+
+  /// Expone la construcción de la URL para los tests (incluye `?token=`).
+  @visibleForTesting
+  Uri streamUriForTest(String consultationId) => _streamUri(consultationId);
 
   @override
   Stream<Map<String, dynamic>> frames(String consultationId) {
