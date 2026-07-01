@@ -119,7 +119,7 @@ async def test_structure_note_construye_request_y_mapea_borrador(monkeypatch):
     assert call["response_format"] is AdmissionNoteDraft
     assert call["model"] == "mistral-large-latest"
     assert call["temperature"] == 0.1
-    assert call["max_tokens"] == 4096
+    assert call["max_tokens"] == 8192
     system, user = call["messages"]
     assert system["role"] == "system"
     assert user["role"] == "user"

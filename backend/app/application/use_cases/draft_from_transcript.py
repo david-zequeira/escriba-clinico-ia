@@ -6,6 +6,7 @@ LLM de `ProcessConsultationUseCase`, pero sin audio ni transcripción batch.
 """
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from app.core.audit import log_event
@@ -13,6 +14,8 @@ from app.domain.enums import ConsultationType
 from app.domain.exceptions import ConsultationNotFound
 from app.domain.ports import ConsultationRepository, LLMProvider
 from app.domain.value_objects import Transcript, TranscriptSegment
+
+logger = logging.getLogger("app.draft")
 
 
 class DraftFromTranscriptUseCase:
@@ -82,21 +85,32 @@ class DraftFromTranscriptUseCase:
         if consultation_type != ConsultationType.admission_interview:
             return transcript
 
-        clusters = _acoustic_clusters(segments)
-        has_unknown = any(s.speaker == "desconocido" for s in segments)
+        # La diarización es un REALCE, no un requisito: si el LLM falla (respuesta
+        # truncada en transcripciones largas, red, etc.) NUNCA debe tumbar el
+        # borrador. Ante cualquier error se conservan las etiquetas del STT y se
+        # sigue estructurando la nota (el médico corrige en la revisión).
+        try:
+            clusters = _acoustic_clusters(segments)
+            has_unknown = any(s.speaker == "desconocido" for s in segments)
 
-        if len(clusters) >= 2 and not has_unknown:
-            return await self._assign_roles_by_cluster(
-                transcript, clusters, consultation_type
+            if len(clusters) >= 2 and not has_unknown:
+                return await self._assign_roles_by_cluster(
+                    transcript, clusters, consultation_type
+                )
+
+            labels = await self._llm.assign_speakers(
+                [s.text for s in segments], consultation_type
             )
-
-        labels = await self._llm.assign_speakers(
-            [s.text for s in segments], consultation_type
-        )
-        return _relabel(
-            transcript,
-            [labels[i] if i < len(labels) else "desconocido" for i in range(len(segments))],
-        )
+            return _relabel(
+                transcript,
+                [labels[i] if i < len(labels) else "desconocido" for i in range(len(segments))],
+            )
+        except Exception:  # noqa: BLE001 - degradar, no propagar
+            logger.warning(
+                "Diarización por LLM fallida; se conservan las etiquetas del STT",
+                exc_info=True,
+            )
+            return transcript
 
     async def _assign_roles_by_cluster(
         self,

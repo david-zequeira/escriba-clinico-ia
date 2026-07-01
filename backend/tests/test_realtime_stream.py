@@ -291,6 +291,46 @@ async def test_draft_conserva_etiquetas_si_el_llm_no_distingue_roles():
     assert speakers == ["medico", "paciente"]  # se conservan las originales
 
 
+class _FailingDiarizationLLM(MockLLMProvider):
+    """Simula que la diarización por LLM falla (p. ej. JSON truncado en una
+    transcripción larga). structure_note sigue siendo el del mock (funciona)."""
+
+    async def assign_speakers(self, texts, consultation_type=ConsultationType.admission_interview):
+        raise RuntimeError("JSON truncado (respuesta larga)")
+
+    async def assign_cluster_roles(
+        self, clusters, consultation_type=ConsultationType.admission_interview
+    ):
+        raise RuntimeError("JSON truncado (respuesta larga)")
+
+
+async def test_draft_sobrevive_a_un_fallo_de_diarizacion():
+    """Un fallo de diarización (transcripción larga → JSON truncado) NO debe
+    tumbar el borrador: se conservan las etiquetas del STT y la nota se genera."""
+    consultation = Consultation(
+        doctor_id="d-1",
+        patient_id="p-1",
+        consultation_type=ConsultationType.admission_interview,
+    )
+    repo = _InMemoryRepo(consultation)
+    transcript = Transcript(
+        segments=[
+            TranscriptSegment(speaker="medico", text="Hola, cuénteme."),
+            TranscriptSegment(speaker="desconocido", text="Me duele el pecho."),
+        ]
+    )
+
+    await DraftFromTranscriptUseCase(repo, _FailingDiarizationLLM()).execute(
+        consultation.id, transcript
+    )
+
+    # El borrador se completa pese al fallo de diarización.
+    assert consultation.status == ConsultationStatus.completed
+    # Se conservan las etiquetas originales del STT (no se pierden ni se inventan).
+    speakers = [s.speaker for s in consultation.transcript.segments]
+    assert speakers == ["medico", "desconocido"]
+
+
 async def test_draft_no_diariza_en_tipos_de_dictado():
     """En dictado (no entrevista) no hay dos interlocutores: no se diariza."""
     consultation = Consultation(

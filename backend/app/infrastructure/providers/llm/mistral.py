@@ -127,7 +127,7 @@ class MistralLLMProvider(LLMProvider):
                 ],
                 response_format=schema,
                 temperature=0.1,
-                max_tokens=4096,
+                max_tokens=8192,
             )
         )
         draft = response.choices[0].message.parsed
@@ -153,7 +153,9 @@ class MistralLLMProvider(LLMProvider):
                 ],
                 response_format=SpeakerLabelsDraft,
                 temperature=0.0,
-                max_tokens=1024,
+                # Una etiqueta por intervención: en consultas largas hay cientos de
+                # segmentos, así que el margen debe ser amplio (evita truncar el JSON).
+                max_tokens=8192,
             )
         )
         parsed = response.choices[0].message.parsed
@@ -188,7 +190,7 @@ class MistralLLMProvider(LLMProvider):
                 ],
                 response_format=SpeakerLabelsDraft,
                 temperature=0.0,
-                max_tokens=256,
+                max_tokens=512,
             )
         )
         parsed = response.choices[0].message.parsed
