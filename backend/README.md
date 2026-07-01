@@ -106,6 +106,14 @@ LLM_MODEL=mistral-small-latest
 
 Reinicia el servidor. En Swagger, sube audio real y espera más tiempo en el paso de `/status` (puede tardar 1–2 min).
 
+**Validar solo el LLM (sin servidor ni audio):** con `LLM_PROVIDER=mistral` y `LLM_API_KEY` en `.env`, ejecuta el smoke-test, que estructura una conversación de ejemplo y muestra el borrador:
+
+```bash
+python -m scripts.smoke_mistral
+```
+
+Comprueba que las secciones reflejan lo dicho y que las que no tienen información quedan vacías (anti-alucinación, CLAUDE.md §7.7).
+
 > No subas `.env` al repositorio. Las claves son personales.
 
 ### PostgreSQL (opcional)

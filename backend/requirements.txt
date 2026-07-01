@@ -13,7 +13,9 @@ aiosqlite>=0.20
 # Cliente WebSocket para STT en streaming (Gladia v2 Live).
 websockets>=13
 # Integraciones MVP (Gladia STT + Mistral LLM)
-mistralai>=1.2
+# Fijado a la línea 2.x: el provider usa el layout `mistralai.client` y
+# `chat.parse_async(response_format=...)` (salida estructurada), verificado con 2.5.
+mistralai>=2.5,<3
 # Integraciones futuras:
 # fhir.resources>=7.1
 # speechmatics-python
