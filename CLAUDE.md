@@ -173,10 +173,14 @@ detente y consulta con el equipo antes de continuar.
 
 ## 9. Estado actual
 
-Las integraciones externas (Speechmatics, Mistral) están como **stubs** con
-resultados simulados para que el flujo funcione de extremo a extremo. Tareas reales
-pendientes: implementar el SDK de STT, el de LLM con salida estructurada JSON, el
-conector FHIR con el HIS del hospital piloto, y la autenticación OIDC.
+El flujo funciona de extremo a extremo. Integraciones reales ya disponibles
+(seleccionables por configuración; el mock sigue por defecto en dev):
+STT en vivo (Gladia v2 Live, Speechmatics RT) y **LLM Mistral** con salida JSON
+estructurada. **Auth OIDC en el backend**: valida el JWT del IdP (JWKS/RS256,
+`iss`/`aud`/`exp`) y protege REST y WebSocket; hay Keycloak de dev en
+`docker-compose` (realm `vionix`). Tareas reales pendientes: **login OIDC en el
+frontend** (Authorization Code + PKCE), el conector FHIR con el HIS del hospital
+piloto, y diarización médico/paciente fiable.
 
 ---
 

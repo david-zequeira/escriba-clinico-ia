@@ -18,8 +18,10 @@ import logging
 from collections import Counter
 from uuid import UUID
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 
+from app.core.security import NotAuthenticated, authenticate
+from app.core.oidc import OidcError
 from app.domain.ports import RealtimeTranscriptionSession
 from app.domain.streaming import FinalTranscript
 from app.domain.value_objects import Transcript, TranscriptSegment
@@ -35,7 +37,17 @@ router = APIRouter(tags=["streaming"])
 
 @router.websocket("/consultations/{consultation_id}/stream")
 async def stream_transcription(websocket: WebSocket, consultation_id: str) -> None:
-    # TODO(F3): autenticar la sesión (OIDC) antes de aceptar, como el resto de la API.
+    # Autenticación antes de aceptar: el navegador no puede fijar cabeceras en el
+    # WS, así que el token viaja como query param (?token=...). Nunca se loguea
+    # (es un secreto, §7.8). Token inválido o ausente (sin bypass) → rechazo 1008.
+    token = websocket.query_params.get("token")
+    try:
+        await authenticate(token)
+    except (OidcError, NotAuthenticated):
+        logger.info("WS rechazado consultation=%s (no autenticado)", consultation_id)
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
     await websocket.accept()
     provider = get_realtime_stt_provider()
     session = await provider.open()
