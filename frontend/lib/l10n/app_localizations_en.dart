@@ -27,6 +27,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signIn => 'Sign in';
 
   @override
+  String get signInWithSso => 'Sign in with hospital SSO';
+
+  @override
+  String get loginFailed => 'Sign-in failed. Please try again.';
+
+  @override
+  String get devAccessLabel => 'development';
+
+  @override
   String get devCredentialsHint =>
       'Development environment: any credentials work.';
 

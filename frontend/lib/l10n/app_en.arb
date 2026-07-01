@@ -7,6 +7,9 @@
   "fieldPassword": "Password",
   "validatorPassword": "Enter your password",
   "signIn": "Sign in",
+  "signInWithSso": "Sign in with hospital SSO",
+  "loginFailed": "Sign-in failed. Please try again.",
+  "devAccessLabel": "development",
   "devCredentialsHint": "Development environment: any credentials work.",
 
   "toggleTheme": "Toggle theme",

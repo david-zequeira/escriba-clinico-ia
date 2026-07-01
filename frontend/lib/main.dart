@@ -31,7 +31,19 @@ class VionixApp extends ConsumerWidget {
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: const [Locale('es'), Locale('en')],
-      home: auth.isAuthenticated ? const HomeScreen() : const LoginScreen(),
+      home: auth.initializing
+          ? const _AuthLoading()
+          : (auth.isAuthenticated ? const HomeScreen() : const LoginScreen()),
     );
+  }
+}
+
+/// Pantalla breve mientras se restaura la sesión guardada al arrancar.
+class _AuthLoading extends StatelessWidget {
+  const _AuthLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

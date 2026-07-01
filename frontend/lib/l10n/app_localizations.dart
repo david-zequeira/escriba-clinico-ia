@@ -134,6 +134,24 @@ abstract class AppLocalizations {
   /// **'Sign in'**
   String get signIn;
 
+  /// No description provided for @signInWithSso.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with hospital SSO'**
+  String get signInWithSso;
+
+  /// No description provided for @loginFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in failed. Please try again.'**
+  String get loginFailed;
+
+  /// No description provided for @devAccessLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'development'**
+  String get devAccessLabel;
+
   /// No description provided for @devCredentialsHint.
   ///
   /// In en, this message translates to:
