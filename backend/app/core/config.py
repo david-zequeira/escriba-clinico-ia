@@ -55,10 +55,23 @@ class Settings(BaseSettings):
     JOB_QUEUE: str = "asyncio"  # asyncio (MVP) | celery (futuro)
 
     # --- Seguridad (OIDC) ---
+    # Emisor y audiencia esperados en el access token (IdP del hospital, UE).
     OIDC_ISSUER: str = ""
     OIDC_AUDIENCE: str = ""
+    # Opcional: fija el JWKS directamente; si se deja vacío se descubre desde el issuer.
+    OIDC_JWKS_URL: str = ""
     # En dev se permite un usuario simulado; en prod debe validarse el token real.
     AUTH_DEV_BYPASS: bool = True
+
+    @property
+    def dev_bypass_active(self) -> bool:
+        """El bypass de auth solo puede activarse en entornos de desarrollo.
+
+        Igual que el mock (§7): un usuario simulado nunca debe poder autenticar en
+        staging/prod. Aunque AUTH_DEV_BYPASS quede a true por error, fuera de dev
+        el efecto es nulo y se exige token real.
+        """
+        return self.AUTH_DEV_BYPASS and self.is_dev_like
 
     @property
     def is_dev_like(self) -> bool:

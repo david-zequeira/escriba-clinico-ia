@@ -1,0 +1,57 @@
+{
+  "realm": "vionix",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "accessTokenLifespan": 1800,
+  "clients": [
+    {
+      "clientId": "vionix-app",
+      "name": "Vionix (app Flutter)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:*",
+        "http://127.0.0.1:*",
+        "vionix://auth"
+      ],
+      "webOrigins": ["*"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "vionix-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "vionix-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "medico",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Médica",
+      "lastName": "Demo",
+      "email": "medico@vionix.test",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medico",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

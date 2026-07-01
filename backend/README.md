@@ -128,6 +128,39 @@ Y en `.env`:
 DATABASE_URL=postgresql+asyncpg://vionix:vionix@localhost:5432/vionix
 ```
 
+### Autenticación OIDC
+
+El backend **no maneja contraseñas**: valida el JWT (firma RS256 contra el JWKS del
+IdP, más `iss`/`aud`/`exp`) y mapea `sub` → médico. En **dev**, sin token y con
+`AUTH_DEV_BYPASS=true`, se usa un médico simulado; fuera de dev el bypass se ignora
+y se exige token real. El WebSocket exige el token como query param (`?token=…`).
+
+**Levantar el IdP de desarrollo (Keycloak):**
+
+```bash
+docker compose up -d keycloak     # realm 'vionix' + usuario demo (medico/medico)
+```
+
+En `.env`:
+
+```bash
+OIDC_ISSUER=http://localhost:8080/realms/vionix
+OIDC_AUDIENCE=vionix-api
+AUTH_DEV_BYPASS=false
+```
+
+**Obtener un token para probar** (grant directo, solo dev):
+
+```bash
+curl -s -X POST \
+  http://localhost:8080/realms/vionix/protocol/openid-connect/token \
+  -d grant_type=password -d client_id=vionix-app \
+  -d username=medico -d password=medico | python -c 'import sys,json;print(json.load(sys.stdin)["access_token"])'
+```
+
+Usa ese token en Swagger (botón **Authorize**) o como `Authorization: Bearer …`.
+El login real desde la app (Authorization Code + PKCE) llega en el Slice 2 (frontend).
+
 ---
 
 ## Problemas frecuentes
