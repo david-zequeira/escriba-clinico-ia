@@ -6,6 +6,7 @@ LLM de `ProcessConsultationUseCase`, pero sin audio ni transcripción batch.
 """
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from app.core.audit import log_event
@@ -13,6 +14,8 @@ from app.domain.enums import ConsultationType
 from app.domain.exceptions import ConsultationNotFound
 from app.domain.ports import ConsultationRepository, LLMProvider
 from app.domain.value_objects import Transcript, TranscriptSegment
+
+logger = logging.getLogger("app.draft")
 
 
 class DraftFromTranscriptUseCase:
@@ -66,36 +69,87 @@ class DraftFromTranscriptUseCase:
     async def _assign_speakers_if_needed(
         self, transcript: Transcript, consultation_type: ConsultationType
     ) -> Transcript:
-        """Atribuye médico/paciente con el LLM cuando el STT no separó a los dos
-        interlocutores.
+        """Fija el rol (médico/paciente) de cada intervención antes de estructurar.
 
-        Solo aplica a la entrevista de ingreso (el dictado es monólogo). Si el STT
-        ya distinguió ≥2 hablantes (multicanal o diarización acústica real) se
-        respeta; el médico corrige en la revisión si quedaron invertidos. Pero si
-        todo cayó en un único interlocutor (mono sin diarización, o una sola voz),
-        pedimos al LLM que los atribuya por contenido.
+        Solo aplica a la entrevista de ingreso (el dictado es monólogo). Dos casos:
+
+        - **Diarización acústica limpia** (el STT distinguió ≥2 voces, sin dejar
+          nadie sin identificar): NO se confía en el orden de aparición (adivina
+          "quien abre = médico" y a veces invierte). Se pide al LLM que asigne el
+          rol de cada voz con TODA su evidencia (`assign_cluster_roles`), lo que
+          corrige inversiones y garantiza consistencia por voz.
+        - **Sin separación fiable** (mono, una sola voz, segmentos neutros del
+          directo): el LLM atribuye por contenido intervención a intervención.
         """
         segments = transcript.segments
         if consultation_type != ConsultationType.admission_interview:
             return transcript
-        real_roles = {s.speaker for s in segments} - {"desconocido"}
-        has_unknown = any(s.speaker == "desconocido" for s in segments)
-        # El STT separó limpiamente solo si distinguió a médico y paciente sin
-        # dejar ningún segmento sin identificar. En cualquier otro caso (una sola
-        # voz, segmentos neutros de la previsualización en vivo…) el LLM atribuye.
-        if len(real_roles) >= 2 and not has_unknown:
+
+        # La diarización es un REALCE, no un requisito: si el LLM falla (respuesta
+        # truncada en transcripciones largas, red, etc.) NUNCA debe tumbar el
+        # borrador. Ante cualquier error se conservan las etiquetas del STT y se
+        # sigue estructurando la nota (el médico corrige en la revisión).
+        try:
+            clusters = _acoustic_clusters(segments)
+            has_unknown = any(s.speaker == "desconocido" for s in segments)
+
+            if len(clusters) >= 2 and not has_unknown:
+                return await self._assign_roles_by_cluster(
+                    transcript, clusters, consultation_type
+                )
+
+            labels = await self._llm.assign_speakers(
+                [s.text for s in segments], consultation_type
+            )
+            return _relabel(
+                transcript,
+                [labels[i] if i < len(labels) else "desconocido" for i in range(len(segments))],
+            )
+        except Exception:  # noqa: BLE001 - degradar, no propagar
+            logger.warning(
+                "Diarización por LLM fallida; se conservan las etiquetas del STT",
+                exc_info=True,
+            )
             return transcript
 
-        labels = await self._llm.assign_speakers(
-            [s.text for s in segments], consultation_type
+    async def _assign_roles_by_cluster(
+        self,
+        transcript: Transcript,
+        clusters: list[str],
+        consultation_type: ConsultationType,
+    ) -> Transcript:
+        segments = transcript.segments
+        groups = [[s.text for s in segments if s.speaker == c] for c in clusters]
+        roles = await self._llm.assign_cluster_roles(groups, consultation_type)
+        mapping = {
+            clusters[i]: (roles[i] if i < len(roles) else "desconocido")
+            for i in range(len(clusters))
+        }
+        # Guarda anti-degeneración: si el LLM no distingue médico y paciente
+        # (p. ej. asigna el mismo rol a ambas voces), se conservan las etiquetas
+        # originales del STT en vez de empeorar la diarización.
+        if not {"medico", "paciente"} <= set(mapping.values()):
+            return transcript
+        return _relabel(transcript, [mapping.get(s.speaker, "desconocido") for s in segments])
+
+
+def _acoustic_clusters(segments: list[TranscriptSegment]) -> list[str]:
+    """Voces distintas que trajo el STT, en orden de aparición (sin 'desconocido')."""
+    clusters: list[str] = []
+    for s in segments:
+        if s.speaker != "desconocido" and s.speaker not in clusters:
+            clusters.append(s.speaker)
+    return clusters
+
+
+def _relabel(transcript: Transcript, labels: list[str]) -> Transcript:
+    relabeled = [
+        TranscriptSegment(
+            speaker=labels[i] if i < len(labels) else "desconocido",
+            text=s.text,
+            start_ms=s.start_ms,
+            end_ms=s.end_ms,
         )
-        relabeled = [
-            TranscriptSegment(
-                speaker=labels[i] if i < len(labels) else "desconocido",
-                text=s.text,
-                start_ms=s.start_ms,
-                end_ms=s.end_ms,
-            )
-            for i, s in enumerate(segments)
-        ]
-        return Transcript(language=transcript.language, segments=relabeled)
+        for i, s in enumerate(transcript.segments)
+    ]
+    return Transcript(language=transcript.language, segments=relabeled)

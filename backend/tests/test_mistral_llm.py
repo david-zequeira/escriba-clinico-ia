@@ -119,7 +119,7 @@ async def test_structure_note_construye_request_y_mapea_borrador(monkeypatch):
     assert call["response_format"] is AdmissionNoteDraft
     assert call["model"] == "mistral-large-latest"
     assert call["temperature"] == 0.1
-    assert call["max_tokens"] == 4096
+    assert call["max_tokens"] == 8192
     system, user = call["messages"]
     assert system["role"] == "system"
     assert user["role"] == "user"
@@ -171,4 +171,36 @@ async def test_assign_speakers_normaliza_y_rellena(monkeypatch):
 async def test_assign_speakers_vacio_no_llama_al_llm(monkeypatch):
     provider = _provider_with(monkeypatch, [])
     assert await provider.assign_speakers([]) == []
+    assert provider._client.chat.calls == []  # type: ignore[attr-defined]
+
+
+# --- assign_cluster_roles ---------------------------------------------------
+
+async def test_assign_cluster_roles_decide_por_grupo(monkeypatch):
+    parsed = SpeakerLabelsDraft(speakers=["paciente", "medico"])
+    provider = _provider_with(monkeypatch, [parsed])
+
+    roles = await provider.assign_cluster_roles(
+        [["me duele el pecho", "desde ayer"], ["¿desde cuándo?", "tome esto"]],
+        ConsultationType.admission_interview,
+    )
+
+    assert roles == ["paciente", "medico"]
+    call = provider._client.chat.calls[0]  # type: ignore[attr-defined]
+    assert call["response_format"] is SpeakerLabelsDraft
+    assert call["temperature"] == 0.0
+    # El texto agregado de cada grupo entra como evidencia en el prompt.
+    assert "me duele el pecho" in call["messages"][1]["content"]
+
+
+async def test_assign_cluster_roles_normaliza_valores_invalidos(monkeypatch):
+    parsed = SpeakerLabelsDraft(speakers=["medico", "robot"])
+    provider = _provider_with(monkeypatch, [parsed])
+    roles = await provider.assign_cluster_roles([["a"], ["b"]])
+    assert roles == ["medico", "desconocido"]
+
+
+async def test_assign_cluster_roles_vacio_no_llama_al_llm(monkeypatch):
+    provider = _provider_with(monkeypatch, [])
+    assert await provider.assign_cluster_roles([]) == []
     assert provider._client.chat.calls == []  # type: ignore[attr-defined]
