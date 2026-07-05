@@ -42,6 +42,23 @@ cd backend
 fly deploy
 ```
 
+## Desplegar API + app web juntas (piloto)
+
+La API sirve la web Flutter en `/app` si existe `backend/webroot/`. El script
+compila la web, la copia y despliega todo como una sola app:
+
+```bash
+# Desde la raíz del repo (usa flutter o fvm automáticamente)
+scripts/deploy-fly.sh
+```
+
+Al terminar, la app queda en `https://escriba-clinico-api.fly.dev/app/`
+(misma URL para API y web: sin CORS y el WebSocket va al mismo host).
+
+> ⚠️ Con `AUTH_DEV_BYPASS=true` la API queda abierta: no compartas la URL fuera
+> del piloto, pon límites de gasto en Gladia/Mistral y usa solo datos simulados
+> (role-play), nunca pacientes reales.
+
 ## Dominio propio (opcional)
 
 Si tienes `api.tudominio.com`:

@@ -53,6 +53,10 @@ build/
 # Docker
 *.log
 
+# Web build copiada para el deploy (scripts/deploy-fly.sh)
+backend/webroot/*
+!backend/webroot/.gitkeep
+
 # Datos locales / audio temporal
 *.wav
 *.mp3
