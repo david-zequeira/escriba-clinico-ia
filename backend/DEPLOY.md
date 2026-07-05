@@ -1,4 +1,26 @@
-# Despliegue en Fly.io (UE — París)
+# Despliegue
+
+Dos opciones, ambas en la UE:
+
+| | Render (Frankfurt) | Fly.io (París) |
+|---|---|---|
+| Tarjeta | **No requiere** | Requiere para verificar |
+| Deploy | Automático desde GitHub (`render.yaml`) | `fly deploy` local |
+| Disco | Efímero (SQLite se reinicia al redesplegar) | Volumen persistente |
+| Arranque en frío | ~1 min tras 15 min sin tráfico | Segundos |
+
+## Opción A: Render (sin tarjeta — recomendada para el piloto)
+
+1. Cuenta en [render.com](https://render.com) (login con GitHub, sin tarjeta).
+2. Dashboard → **New → Blueprint** → conecta el repo (usa [`render.yaml`](../render.yaml)
+   y [`Dockerfile.render`](../Dockerfile.render), que compila la web Flutter dentro del build).
+3. Rellena en el dashboard los dos secretos: `STT_API_KEY` (Gladia) y `LLM_API_KEY` (Mistral).
+4. Deploy. La app queda en `https://<nombre-servicio>.onrender.com/app/`
+   (la web usa el mismo origen que la API: no hace falta configurar URLs).
+
+Cada `git push` a la rama conectada redespliega automáticamente.
+
+## Opción B: Fly.io (UE — París)
 
 API pública con Swagger en `https://<app>.fly.dev/docs` (HTTPS gratis).
 

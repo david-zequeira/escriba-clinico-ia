@@ -1,10 +1,19 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// Configuración de la app. En producción, inyectar por entorno.
 class AppConfig {
-  /// URL del backend (alojado en la UE).
-  static const String apiBaseUrl = String.fromEnvironment(
+  static const String _definedApiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:8000',
   );
+
+  /// URL del backend (alojado en la UE). Si no se inyecta por --dart-define,
+  /// en web usa el mismo origen que sirve la app (API y web viven juntas) y
+  /// en el resto de plataformas el backend local de desarrollo.
+  static String get apiBaseUrl {
+    if (_definedApiBaseUrl.isNotEmpty) return _definedApiBaseUrl;
+    if (kIsWeb) return Uri.base.origin;
+    return 'http://localhost:8000';
+  }
 
   // --- OIDC (IdP del hospital: Keycloak u equivalente, residencia UE) ---
   // Se inyectan por --dart-define. Si `oidcIssuer` está vacío, la app opera en
