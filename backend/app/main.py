@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import consultations, health, streaming
 from app.core.config import settings
@@ -48,6 +50,12 @@ if settings.ENV in ("dev", "staging"):
 app.include_router(health.router)
 app.include_router(consultations.router)
 app.include_router(streaming.router)
+
+# App web (Flutter) servida por la propia API en /app. El contenido lo genera
+# `scripts/deploy-fly.sh` (build web -> backend/webroot); si no existe, no se monta.
+_webroot = Path(__file__).resolve().parent.parent / "webroot"
+if (_webroot / "index.html").exists():
+    app.mount("/app", StaticFiles(directory=_webroot, html=True), name="web")
 
 
 if settings.DOCS_ENABLED:

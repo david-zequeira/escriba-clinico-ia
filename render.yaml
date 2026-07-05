@@ -1,0 +1,53 @@
+# Blueprint de Render (https://render.com/docs/blueprint-spec).
+# Tier gratuito, región Frankfurt (UE). La app queda en:
+#   https://<nombre-servicio>.onrender.com/app/
+#
+# Pasos: Render dashboard -> New -> Blueprint -> conectar este repo.
+# Después, rellenar STT_API_KEY y LLM_API_KEY en el dashboard (sync: false).
+#
+# Limitaciones del tier gratuito (aceptables para el piloto):
+# - La máquina se apaga tras ~15 min sin tráfico; el primer request tarda ~1 min.
+# - Disco efímero: la BD SQLite se reinicia en cada deploy/restart.
+
+services:
+  - type: web
+    name: escriba-clinico
+    runtime: docker
+    region: frankfurt
+    plan: free
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: ENV
+        value: staging
+      - key: APP_NAME
+        value: Vionix IA
+      - key: DOCS_ENABLED
+        value: 'true'
+      - key: STT_PROVIDER
+        value: gladia
+      - key: STT_LANGUAGE
+        value: es
+      - key: GLADIA_MODEL
+        value: solaria-3
+      - key: LLM_PROVIDER
+        value: mistral
+      - key: LLM_MODEL
+        value: mistral-small-latest
+      - key: JOB_QUEUE
+        value: asyncio
+      - key: DELETE_AUDIO_AFTER_TRANSCRIPTION
+        value: 'true'
+      - key: DATABASE_URL
+        value: sqlite+aiosqlite:////app/var/vionix.db
+      - key: AUDIO_STORAGE_DIR
+        value: /app/var/audio
+      # Demo: sin login. Cambiar a false cuando haya OIDC en el frontend.
+      - key: AUTH_DEV_BYPASS
+        value: 'true'
+      # Claves: se rellenan a mano en el dashboard (no van en git).
+      - key: STT_API_KEY
+        sync: false
+      - key: LLM_API_KEY
+        sync: false

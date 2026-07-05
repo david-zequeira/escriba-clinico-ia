@@ -1,0 +1,31 @@
+# Contexto de Dockerfile.render (raíz del repo): fuera todo lo que no
+# necesitan las etapas de build (web Flutter + API Python).
+.git
+.github
+.githooks
+.claude
+docs
+scripts
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.dart_tool
+**/.idea
+**/.vscode
+frontend/build
+frontend/ios
+frontend/android
+frontend/macos
+frontend/windows
+frontend/linux
+frontend/test
+backend/var
+backend/tests
+backend/webroot
+backend/keycloak
+**/*.db
+**/.env
+**/.env.*
+!**/.env.example
