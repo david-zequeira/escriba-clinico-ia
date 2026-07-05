@@ -16,11 +16,17 @@ primary_region = 'cdg'
   dockerfile = 'Dockerfile'
 
 [env]
-  ENV = 'staging'
+  # ENV=dev: el piloto usa login demo (el bypass de auth solo surte efecto en
+  # entornos dev-like; en staging/prod el backend exige OIDC real por diseño).
+  # Datos SIEMPRE simulados. Al pasar a OIDC real: ENV=staging y bypass=false.
+  ENV = 'dev'
   APP_NAME = 'Vionix IA'
   DOCS_ENABLED = 'true'
   API_PORT = '8080'
   STT_PROVIDER = 'gladia'
+  # STT en vivo (WebSocket): sin esto, el default es mock y la transcripción
+  # en directo saldría simulada.
+  STT_REALTIME_PROVIDER = 'gladia'
   LLM_PROVIDER = 'mistral'
   STT_LANGUAGE = 'es'
   GLADIA_MODEL = 'solaria-3'

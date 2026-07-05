@@ -19,13 +19,20 @@ services:
     dockerContext: .
     healthCheckPath: /health
     envVars:
+      # ENV=dev: el piloto usa login demo (AUTH_DEV_BYPASS solo surte efecto en
+      # entornos dev-like; en staging/prod el backend exige OIDC real por diseño).
+      # Datos SIEMPRE simulados. Al pasar a OIDC real: ENV=staging y bypass=false.
       - key: ENV
-        value: staging
+        value: dev
       - key: APP_NAME
         value: Vionix IA
       - key: DOCS_ENABLED
         value: 'true'
       - key: STT_PROVIDER
+        value: gladia
+      # STT en vivo (WebSocket): sin esto, el default es mock y la transcripción
+      # en directo saldría simulada.
+      - key: STT_REALTIME_PROVIDER
         value: gladia
       - key: STT_LANGUAGE
         value: es
