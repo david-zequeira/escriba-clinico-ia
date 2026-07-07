@@ -70,6 +70,10 @@ class AudioRecorderDataSource {
     }
 
     if (_useStream) {
+      // Camino de stream (web/macOS): `startStream` inicializa la captura y
+      // lanza si falla, así que la propia llamada es la confirmación. No se
+      // re-sondea `isRecording` (en web daba un falso negativo con la ventana
+      // fija de 250 ms: el AudioWorklet tarda en arrancar y saltaba el error).
       _pcmBuffer.clear();
       final stream = await _recorder.startStream(_streamConfig);
       _streaming = true;
@@ -79,16 +83,26 @@ class AudioRecorderDataSource {
       });
     } else {
       await _recorder.start(_fileConfig, path: tempPath);
-    }
-
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-    if (!await _recorder.isRecording()) {
-      await _resetRecorder();
-      throw StateError(
-        'No se pudo iniciar la grabación. Comprueba el micrófono en Ajustes del sistema.',
-      );
+      // El modo fichero puede fallar en silencio (p. ej. AVCapture): confírmalo.
+      if (!await _waitUntilRecording()) {
+        await _resetRecorder();
+        throw StateError(
+          'No se pudo iniciar la grabación. Comprueba el micrófono en Ajustes del sistema.',
+        );
+      }
     }
     _startedAt = DateTime.now();
+  }
+
+  /// Espera (hasta ~2 s) a que el grabador confirme que captura. La
+  /// inicialización del micrófono es asíncrona; un único sondeo corto da falsos
+  /// negativos en arranques lentos.
+  Future<bool> _waitUntilRecording() async {
+    for (var i = 0; i < 8; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      if (await _recorder.isRecording()) return true;
+    }
+    return false;
   }
 
   /// Chunks de audio PCM (16-bit, 16 kHz, mono) en vivo durante la captura, para
