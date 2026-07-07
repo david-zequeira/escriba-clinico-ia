@@ -52,10 +52,15 @@ class AudioRecorderDataSource {
     return 'wav';
   }
 
-  /// macOS: el modo archivo de `record_darwin` finaliza el fichero en un callback
-  /// nativo asíncrono. Stream + WAV en memoria evita ficheros temporales frágiles.
-  /// `!kIsWeb` primero: en web `Platform` lanza `Unsupported operation`.
-  bool get _useStreamOnDesktop => !kIsWeb && Platform.isMacOS;
+  /// Plataformas donde capturamos por *stream* de PCM en vivo (16 kHz, mono),
+  /// imprescindible para el STT en streaming por WebSocket (sin esto no se envía
+  /// audio y no hay transcripción ni borrador):
+  /// - Web: `record_web` produce PCM16 vía AudioWorklet (resamplea a 16 kHz).
+  /// - macOS: `record_darwin` en modo stream (además evita ficheros temporales
+  ///   frágiles, que se finalizan en un callback nativo asíncrono).
+  /// En Windows/Linux/móvil se graba a fichero (el STT en vivo no está cableado ahí).
+  /// `!kIsWeb` antes de `Platform`: en web `Platform` lanza `Unsupported operation`.
+  bool get _useStream => kIsWeb || (!kIsWeb && Platform.isMacOS);
 
   Future<bool> hasPermission() => _recorder.hasPermission();
 
@@ -64,7 +69,7 @@ class AudioRecorderDataSource {
       throw StateError('Sin permiso de micrófono. Actívalo en Ajustes del sistema.');
     }
 
-    if (_useStreamOnDesktop) {
+    if (_useStream) {
       _pcmBuffer.clear();
       final stream = await _recorder.startStream(_streamConfig);
       _streaming = true;
@@ -87,7 +92,7 @@ class AudioRecorderDataSource {
   }
 
   /// Chunks de audio PCM (16-bit, 16 kHz, mono) en vivo durante la captura, para
-  /// alimentar el STT en streaming. Solo emite en plataformas de stream (hoy
+  /// alimentar el STT en streaming. Solo emite en plataformas de stream (web y
   /// macOS); en modo fichero no hay audio en vivo que reenviar.
   Stream<Uint8List> get audioChunks => _pcmStream.stream;
 
@@ -118,11 +123,14 @@ class AudioRecorderDataSource {
       throw StateError('Graba al menos un segundo antes de detener.');
     }
 
-    if (kIsWeb) {
-      return _stopWebRecording();
-    }
+    // Web y macOS capturan por stream: reconstruyen el WAV desde el búfer PCM.
     if (_streaming) {
       return _stopStreamRecording();
+    }
+    // Fallback web si el stream no llegó a arrancar (p. ej. AudioWorklet no
+    // disponible): recupera el blob grabado.
+    if (kIsWeb) {
+      return _stopWebRecording();
     }
     return _stopFileRecording(tempPath);
   }
