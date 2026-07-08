@@ -5,6 +5,7 @@ import 'package:escriba_clinico/features/audio/domain/entities/recorded_audio.da
 import 'package:escriba_clinico/features/audio/domain/repositories/audio_repository.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/transcript.dart';
 import 'package:escriba_clinico/features/consultation/domain/entities/transcription_event.dart';
+import 'package:escriba_clinico/core/wake_guard.dart';
 import 'package:escriba_clinico/features/consultation/domain/repositories/transcription_stream_repository.dart';
 import 'package:escriba_clinico/features/consultation/state_management/live_transcription_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -74,18 +75,33 @@ class _FakeTranscription implements TranscriptionStreamRepository {
   Future<void> close() async => closed = true;
 }
 
+/// Wake lock falso: cuenta activaciones/liberaciones para verificar que el
+/// equipo se mantiene despierto solo mientras dura la captura.
+class _FakeWake implements WakeGuard {
+  int enableCalls = 0;
+  int disableCalls = 0;
+
+  @override
+  Future<void> enable() async => enableCalls++;
+
+  @override
+  Future<void> disable() async => disableCalls++;
+}
+
 /// Deja correr los microtasks para que el stream entregue el evento.
 Future<void> _settle() => Future<void>.delayed(Duration.zero);
 
 void main() {
   late _FakeAudio audio;
   late _FakeTranscription transcription;
+  late _FakeWake wake;
   late LiveTranscriptionController controller;
 
   setUp(() {
     audio = _FakeAudio();
     transcription = _FakeTranscription();
-    controller = LiveTranscriptionController(audio, transcription);
+    wake = _FakeWake();
+    controller = LiveTranscriptionController(audio, transcription, wake);
   });
 
   tearDown(() {
@@ -174,6 +190,22 @@ void main() {
     expect(recorded!.bytes, [1, 2, 3]);
     expect(controller.state.status, LiveStatus.stopped);
     expect(transcription.closed, isTrue);
+  });
+
+  test('mantiene el equipo despierto durante la captura y lo libera al parar',
+      () async {
+    await controller.start('c-1', tempPath: '/tmp/x.wav');
+    expect(wake.enableCalls, 1);
+    expect(wake.disableCalls, 0);
+
+    await controller.stop();
+    expect(wake.disableCalls, greaterThanOrEqualTo(1));
+  });
+
+  test('finishCapture libera el wake lock', () async {
+    await controller.start('c-1', tempPath: '/tmp/x.wav');
+    await controller.finishCapture();
+    expect(wake.disableCalls, greaterThanOrEqualTo(1));
   });
 
   test('un evento de error pasa la sesión a error con mensaje', () async {

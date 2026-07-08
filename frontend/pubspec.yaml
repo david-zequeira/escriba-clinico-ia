@@ -21,6 +21,7 @@ dependencies:
   flutter_secure_storage: ^9.2.2 # solo tokens, nunca datos clínicos
   shared_preferences: ^2.3.2    # persistencia ligera (preferencia de tema)
   go_router: ^14.2.7            # navegación
+  wakelock_plus: ^1.2.8         # evita que el equipo se duerma durante la captura
   intl: any                     # lo fija flutter_localizations
 
 dev_dependencies:

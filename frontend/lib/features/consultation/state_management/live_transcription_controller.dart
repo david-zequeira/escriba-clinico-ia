@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:escriba_clinico/core/app_log.dart';
+import 'package:escriba_clinico/core/wake_guard.dart';
 import 'package:escriba_clinico/features/audio/data/repositories/audio_repository_impl.dart';
 import 'package:escriba_clinico/features/audio/domain/entities/recorded_audio.dart';
 import 'package:escriba_clinico/features/audio/domain/repositories/audio_repository.dart';
@@ -55,11 +56,15 @@ class LiveTranscriptionState {
 /// el futuro, el envío de audio) y consume el stream de transcripción del
 /// backend. No conoce ni WebSocket ni el plugin de audio: solo los puertos.
 class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> {
-  LiveTranscriptionController(this._audio, this._transcription)
-      : super(const LiveTranscriptionState());
+  LiveTranscriptionController(
+    this._audio,
+    this._transcription, [
+    this._wake = const NoopWakeGuard(),
+  ]) : super(const LiveTranscriptionState());
 
   final AudioRepository _audio;
   final TranscriptionStreamRepository _transcription;
+  final WakeGuard _wake;
 
   StreamSubscription<TranscriptionEvent>? _eventsSub;
   StreamSubscription<double>? _amplitudeSub;
@@ -82,6 +87,9 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
     devLog('F2.live', 'start consultation=$consultationId');
     try {
       await _audio.start(tempPath);
+      // Mantén el equipo despierto: si el portátil se suspende, la grabación se
+      // corta. Se libera en cualquier cierre de la sesión (_teardown/finish).
+      await _wake.enable();
       devLog('F2.live', 'micrófono iniciado');
       _amplitudeSub = _audio.amplitudeStream().listen(
             (level) => state = state.copyWith(amplitude: level),
@@ -146,6 +154,7 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
     await _eventsSub?.cancel();
     _eventsSub = null;
     await _transcription.close();
+    await _wake.disable();
 
     RecordedAudio? audio;
     final path = _tempPath;
@@ -197,6 +206,7 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
   }
 
   Future<void> _teardown() async {
+    await _wake.disable();
     await _audioChunksSub?.cancel();
     _audioChunksSub = null;
     await _amplitudeSub?.cancel();
@@ -215,6 +225,7 @@ class LiveTranscriptionController extends StateNotifier<LiveTranscriptionState> 
     _amplitudeSub?.cancel();
     _eventsSub?.cancel();
     unawaited(_transcription.close());
+    unawaited(_wake.disable());
     super.dispose();
   }
 }
@@ -224,5 +235,6 @@ final liveTranscriptionProvider =
   (ref) => LiveTranscriptionController(
     ref.watch(audioRepositoryProvider),
     ref.watch(transcriptionStreamRepositoryProvider),
+    ref.watch(wakeGuardProvider),
   ),
 );
