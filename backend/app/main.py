@@ -51,11 +51,25 @@ app.include_router(health.router)
 app.include_router(consultations.router)
 app.include_router(streaming.router)
 
+class _NoCacheStaticFiles(StaticFiles):
+    """Sirve la web con `Cache-Control: no-cache`.
+
+    Así el navegador revalida en cada carga (ETag → 304 si no cambió) y ve las
+    actualizaciones al instante, sin depender de un service worker ni de recargas
+    forzadas. La web se construye además sin SW (`--pwa-strategy=none`).
+    """
+
+    async def get_response(self, path: str, scope):  # type: ignore[override]
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 # App web (Flutter) servida por la propia API en /app. El contenido lo genera
 # `scripts/deploy-fly.sh` (build web -> backend/webroot); si no existe, no se monta.
 _webroot = Path(__file__).resolve().parent.parent / "webroot"
 if (_webroot / "index.html").exists():
-    app.mount("/app", StaticFiles(directory=_webroot, html=True), name="web")
+    app.mount("/app", _NoCacheStaticFiles(directory=_webroot, html=True), name="web")
 
 
 if settings.DOCS_ENABLED:

@@ -34,6 +34,20 @@
 </head>
 <body>
   <!--
+    La app se construye sin service worker (`--pwa-strategy=none`) para que las
+    actualizaciones lleguen sin recargas forzadas. Este script limpia cualquier
+    SW antiguo que quedara instalado de builds anteriores (migración de una sola
+    vez); tras ejecutarse, las futuras cargas ya no llevan SW.
+  -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        for (var i = 0; i < regs.length; i++) { regs[i].unregister(); }
+      });
+    }
+  </script>
+
+  <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
     or to give the user feedback during the initialization process.
