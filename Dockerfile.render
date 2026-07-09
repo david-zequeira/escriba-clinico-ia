@@ -8,7 +8,9 @@
 FROM ghcr.io/cirruslabs/flutter:3.44.0 AS webbuild
 WORKDIR /src/frontend
 COPY frontend/ .
-RUN flutter pub get && flutter build web --release --base-href /app/
+# `--pwa-strategy=none`: sin service worker, para que las actualizaciones lleguen
+# sin recargas forzadas (la API sirve la web con Cache-Control: no-cache).
+RUN flutter pub get && flutter build web --release --pwa-strategy=none --base-href /app/
 
 # --- Etapa 2: API (Python) ---
 FROM python:3.12-slim

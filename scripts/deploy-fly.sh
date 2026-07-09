@@ -25,7 +25,8 @@ fi
 
 echo "==> Compilando web (API_BASE_URL=$API_URL)"
 cd "$ROOT/frontend"
-$FLUTTER build web --release --base-href /app/ --dart-define=API_BASE_URL="$API_URL"
+# --pwa-strategy=none: sin service worker (actualizaciones sin recargas forzadas).
+$FLUTTER build web --release --pwa-strategy=none --base-href /app/ --dart-define=API_BASE_URL="$API_URL"
 
 echo "==> Copiando build a backend/webroot"
 rm -rf "$ROOT/backend/webroot"

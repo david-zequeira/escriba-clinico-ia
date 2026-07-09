@@ -18,6 +18,8 @@ services:
     dockerfilePath: ./Dockerfile.render
     dockerContext: .
     healthCheckPath: /health
+    # Redespliega solo en cada push a la rama conectada (main).
+    autoDeploy: true
     envVars:
       # ENV=dev: el piloto usa login demo (AUTH_DEV_BYPASS solo surte efecto en
       # entornos dev-like; en staging/prod el backend exige OIDC real por diseño).
